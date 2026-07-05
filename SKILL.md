@@ -1,12 +1,13 @@
 ---
 name: cyber-ppt
-description: "主人说'做个PPT'时用这个技能。把文档/数据/想法转成咨询风格高密度PPTX。三阶段：证据分析→视觉蓝图→PPTX生成+QA。不是套模板，是流水线式生产。来源：CyberPPT项目(crazyykhllc-bit/CyberPPT)方法论。"
+description: "主人说'做个PPT'时用这个技能。把文档/数据/想法转成咨询风格高密度PPTX。三阶段：证据分析→视觉蓝图→PPTX生成+QA。已发布为独立项目 duduppt (github.com/Shine8592/duduppt)。"
 ---
 
 # 🎯 嘟嘟的咨询风PPT流水线
 
-> 来源：CyberPPT（crazyykhllc-bit/CyberPPT）三阶段方法论
-> 适配为嘟嘟可执行的 Hermes 技能
+> 来源：[CyberPPT](https://github.com/crazyykhllc-bit/CyberPPT)（crazyykhllc-bit/CyberPPT）三阶段方法论
+> 已发布为独立项目：[duduppt](https://github.com/Shine8592/duduppt) — GitHub
+> 经 SkillOpt 流程验证（Rollout→Reflect→Update→Gate→Ship）
 
 ## 触发条件
 
@@ -124,6 +125,52 @@ description: "主人说'做个PPT'时用这个技能。把文档/数据/想法�
 - 图表类型和数据来源
 - 哪些区域需要保留为图片（复杂插画/照片/Logo）
 
+---
+
+## 🖼️ 图片能力（生图 + 识图 + 配图）
+
+### 图片从哪来
+
+| 来源 | 能力 | 工具 |
+|------|------|------|
+| **已有图片** | 我可以用 vision_analyze 读取图片，识别颜色、布局、元素 | `vision_analyze` |
+| **AI 生成** | Agnes AI API 已配好，随时生图 | `agnes-image` 技能 |
+| **外部素材** | 品牌 Logo、产品截图、照片等由主人提供 | 直接插入 PPTX |
+
+### 如何用图片美化 PPT
+
+**方案 A：AI 生图（Agnes API）**
+```bash
+# 示例：生成一张科技风插画作为PPT背景
+source ~/.hermes/.env
+curl -s -H "Authorization: Bearer $AGNES_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "agnes-image-2.1-flash",
+    "prompt": "abstract technology background, blue and white gradient, clean lines, minimalist, 16:9",
+    "n": 1,
+    "size": "1024x576"
+  }' \
+  "https://apihub.agnes-ai.com/v1/images/generations"
+```
+
+**方案 B：分析已有图片提取配色**
+当我看到主人提供的参考图/品牌 Logo 时，可以用 vision_analyze 提取主色 → 用该色板做 PPT 视觉风格。
+
+**方案 C：图片在 PPTX 中的使用原则**
+- **封面**：大面积 AI 生成图/高清照片做背景（配合深色遮罩 + 白字）
+- **内容页**：小面积配图（图标、插画、图表背景），不影响文字可编辑性
+- **图表**：柱状图/折线图/表格必须原生重建，不可用图片替代
+- **Logo**：品牌 Logo 可以用图片，但要确保背景透明或匹配底色
+
+### 图片红线
+
+| 禁止 | 正确做法 |
+|------|----------|
+| 用整页截图当 PPT 背景 | 图片只做装饰/配图，主要信息层必须可编辑 |
+| 把文字烘焙进图片 | 标题/正文/KPI/来源必须原生文字 |
+| 随意用风格不统一的网图 | AI 生图或主人提供的高质量图片 |
+
 **👉 出完后向主人汇报，等第二次确认再进阶段三**
 
 ---
@@ -186,7 +233,7 @@ for i, slide in enumerate(prs.slides):
     print(f'  Pics: {\"⚠️\" if pics else \"✅\"} ({pics} pictures)')
 ```
 
-#### 步骤 3.2 — 逐页生成流程
+#### 步骤 3.3 — 逐页生成流程
 
 每页执行顺序：
 1. 写蓝图 → 换算坐标（px → inch）
@@ -196,7 +243,7 @@ for i, slide in enumerate(prs.slides):
 5. 视觉 QA 检查
 6. 用户确认 → 再进下一页
 
-#### 步骤 3.3 — QA 检查清单
+#### 步骤 3.4 — QA 检查清单
 
 **严格检查以下每一项：**
 
@@ -216,25 +263,15 @@ for i, slide in enumerate(prs.slides):
 □ 无整页蓝图截图当背景
 ```
 
-**QA 命令：**
-```bash
-# PPTX → PDF → PNG 渲染
-python -m scripts.office.soffice --headless --convert-to pdf output.pptx
-pdftoppm -jpeg -r 150 output.pdf slide
+**👉 最终交付：PPTX + QA 报告**
 
-# 内容检查
-python -m markitdown output.pptx | grep -iE "xxxx|lorem|ipsum|todo"
-```
-
-#### 步骤 3.4 — 最终合并
+#### 步骤 3.5 — 最终合并
 
 逐页通过后，合并单页 PPTX 为完整 deck。合并后做全篇回归验证：
 - 所有页面存在
 - 背景/主题一致
 - 无页面偏移/变形
 - 字体无变化
-
-**👉 最终交付：PPTX + QA 报告**
 
 ---
 
