@@ -106,6 +106,50 @@ Phase 3: PPTX 生成
 | T13 | KPI 大数字 | 18-28pt |
 | T14 | 注释/来源/页脚 | 6.5-8pt |
 
+## 🖼️ 图片能力
+
+duduppt 支持三种图片来源美化 PPT：
+
+| 方式 | 工具 | 用法 |
+|------|------|------|
+| **AI 生成** | `scripts/generate-image.js` | Agnes API 生图，支持 16:9/4:3/1:1 尺寸 |
+| **提取配色** | `scripts/extract-palette.py` | 从参考图/Logo 提取颜色，自动生成色板 |
+| **直接插入** | pptxgenjs/python-pptx | 品牌 Logo、产品截图、照片直接放 |
+
+### 快速生图
+
+```bash
+export AGNES_API_KEY="sk-..."
+node scripts/generate-image.js --prompt "科技蓝渐变背景" --style bg --out cover.png
+```
+
+### 从参考图提取配色
+
+```bash
+python3 scripts/extract-palette.py --input brand-logo.png --format json
+```
+
+输出包含 background、title_text、body_text、accent 四组颜色，可直接用于 PPT 风格。
+
+### 图片使用规则
+
+| 位置 | 允许图片？ | 要求 |
+|------|-----------|------|
+| 封面背景 | ✅ | 配合深色遮罩 + 白字，保证文字可读 |
+| 内容页配图 | ✅ | 小面积，不影响正文可编辑性 |
+| 品牌 Logo | ✅ | 确保背景透明或匹配底色 |
+| 图表/表格 | ❌ | 必须原生重建，不用截图 |
+| 整页截图 | ❌ | 不可编辑，禁止使用 |
+
+## 🗺️ 路线图
+
+| 版本 | 状态 | 内容 |
+|------|------|------|
+| **v1.0** | ✅ 已发布 | 三阶段方法论 + 8 种风格 + C0-T14 字体体系 + 13 项 QA |
+| **v1.1** | 🔜 进行中 | 图片流水线（AI 生图 + 参考图配色 + 自动配图规则） |
+| **v1.2** | 📋 规划中 | 布局模板库（10+ 种可复用蓝图：封面/目录/对比/时间线/数据页） |
+| **v1.3** | 📋 规划中 | 多语言支持 + 更多视觉风格 + 社区模板市场 |
+
 ## 🚫 红线
 
 | 禁止 | 原因 |
@@ -123,13 +167,16 @@ Phase 3: PPTX 生成
 duduppt/
 ├── SKILL.md                     # Hermes 技能文件
 ├── README.md                    # 本文件
+├── COMMUNITY.md                 # 推广策略 + 实战踩坑总结
 ├── references/
 │   ├── palettes.md              # 8 种色板配色代码
 │   └── typography-scale.md      # C0/T1-T14 字体层级
 ├── assets/palette-samples/
 │   ├── palette-01.png ~ 08.png  # 视觉风格样张
 ├── scripts/
-│   └── generate-sample.js       # 示例生成脚本
+│   ├── generate-sample.js       # 示例生成脚本
+│   ├── generate-image.js        # Agnes AI 生图（PPT 尺寸适配）
+│   └── extract-palette.py       # 从参考图提取配色
 └── examples/
     └── duduppt-sample.pptx       # 示例输出
 ```
