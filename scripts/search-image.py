@@ -124,6 +124,57 @@ def search_unsplash(query: str, count: int = 3) -> list:
         return []
 
 
+def scrape_pexels_web(query: str, count: int = 3) -> list:
+    """零 API key 方案：直接爬 Pexels 搜索结果页，提取免费图片 URL。"""
+    import re
+    encoded = urllib.parse.quote(query)
+    url = f"https://www.pexels.com/zh-cn/search/{encoded}/"
+
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"}
+        )
+        resp = urllib.request.urlopen(req, timeout=15)
+        html = resp.read().decode('utf-8', 'ignore')
+
+        results = []
+        # 从 HTML 中提取图片 URL
+        img_pattern = re.compile(
+            r'<img[^>]*src="(https://images\.pexels\.com/[^"]+)"[^>]*'
+            r'(?:alt="([^"]*)")?[^>]*>'
+        )
+        seen = set()
+        for m in img_pattern.finditer(html):
+            img_url = m.group(1)
+            alt = m.group(2) or ''
+            if img_url not in seen and len(results) < count:
+                seen.add(img_url)
+                large_url = re.sub(r'(/photos/\d+)/[^/]+$', r'\1/1280/', img_url)
+                results.append({
+                    "id": len(results) + 1,
+                    "url": large_url,
+                    "medium": img_url,
+                    "small": img_url,
+                    "photographer": "",
+                    "photographer_url": "",
+                    "alt": alt.strip(),
+                    "width": 1280,
+                    "height": 720,
+                    "source": "pexels_web",
+                    "license": "Pexels License (free use)",
+                })
+        return results
+    except Exception as e:
+        print(f"  ⚠️ Pexels web scrape failed: {e}", file=sys.stderr)
+        return []
+
+
+def search_duckduckgo_images(query: str, count: int = 3) -> list:
+    """零 API key 最终兜底：提示用户直接让我搜更可靠。"""
+    return []  # 爬取搜索引擎不可靠，由 AI 直接使用 web_search 手动搜
+
+
 def search_pixabay(query: str, count: int = 3) -> list:
     """Pixabay API 搜索。"""
     api_key = get_api_key('PIXABAY_API_KEY')
@@ -188,8 +239,8 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--query", "-q", required=True, help="搜索关键词")
-    parser.add_argument("--source", choices=["pexels", "unsplash", "pixabay", "auto"],
-                        default="auto", help="图片来源 (auto=自动尝试全部)")
+    parser.add_argument("--source", choices=["pexels", "unsplash", "pixabay", "bing", "auto"],
+                        default="auto", help="图片来源 (auto=自动尝试全部，含无 key 方案)")
     parser.add_argument("--count", "-n", type=int, default=3, help="返回数量")
     parser.add_argument("--style", choices=list(PPT_STYLES.keys()), default="hero",
                         help="PPT 用途 (影响图片尺寸建议)")
@@ -200,33 +251,39 @@ def main():
     # ── 搜索 ──
     sources_to_try = []
     if args.source == "auto":
-        sources_to_try = ["pexels", "unsplash", "pixabay"]
+        sources_to_try = ["pexels", "unsplash", "pixabay", "pexels_web"]
+    elif args.source == "pexels":
+        sources_to_try = ["pexels", "pexels_web"]
     else:
         sources_to_try = [args.source]
 
     all_results = []
     for src in sources_to_try:
         if all_results:
-            break  # 有结果就不再尝试其他源
+            break
         search_fn = {
             "pexels": search_pexels,
             "unsplash": search_unsplash,
             "pixabay": search_pixabay,
+            "pexels_web": scrape_pexels_web,
+            "bing": search_duckduckgo_images,
         }[src]
+        print(f"  🔍 尝试来源: {src}...")
         results = search_fn(args.query, args.count)
         if results:
+            print(f"     → {len(results)} 张图片")
             all_results = results
+        else:
+            print(f"     → 无结果")
 
     if not all_results:
-        style = PPT_STYLES[args.style]
-        print(f"\n❌ 未找到图片。请配置 API key 或使用 generate-image.js 生成。")
-        print(f"\n支持的图片源 API key（免费注册）：")
+        print(f"\n❌ 未找到图片。请配置免费 API key 实现自动搜索：")
         print(f"  PEXELS_API_KEY     → https://www.pexels.com/api/")
         print(f"  UNSPLASH_ACCESS_KEY → https://unsplash.com/developers")
         print(f"  PIXABAY_API_KEY    → https://pixabay.com/api/docs/")
-        print(f"\n或使用 AI 生成：")
-        print(f"  node scripts/generate-image.js --prompt \"{args.query}\" --style {args.style}")
-        sys.exit(1 if not any([get_api_key('PEXELS_API_KEY'), get_api_key('UNSPLASH_ACCESS_KEY'), get_api_key('PIXABAY_API_KEY')]) else 0)
+        print(f"\n或者直接告诉我需要什么图，我可以用 web 工具帮你搜 + 下载。")
+        print("例如: 帮我在 Pexels 上搜一张商务会议的图片")
+        sys.exit(1)
 
     # ── 下载 ──
     if args.download:
