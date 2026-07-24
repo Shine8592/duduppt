@@ -7,7 +7,7 @@ description: "主人说'做个PPT'时用这个技能。把文档/数据/想法�
 
 > 来源：[CyberPPT](https://github.com/crazyykhllc-bit/CyberPPT) 三阶段方法论
 > GitHub 项目：[duduppt](https://github.com/Shine8592/duduppt)
-> 升级 v1.1：Deep Research + 模板学习 + 布局库 + 多模型 + 多图源
+> 升级 v2.0：16+1 风格库 + 设计访谈 + 配图管理 + 演讲者备注
 
 ## 触发条件
 
@@ -108,10 +108,25 @@ python3 scripts/learn-from-pptx.py --input reference.pptx --compare
 ```
 自动提取：配色方案、字体、布局特征 → 匹配最接近的 duduppt 预设风格
 
-#### 步骤 2.1 — 选风格（8选1 + 1特选 + 参考学习）
+#### 步骤 2.1 — 设计访谈（先问再选，不盲目推荐）
+
+在选风格之前，先问主人 5 个问题确定方向：
+
+```
+1. 受众是谁？        → 高管/客户/同行/公众？
+2. 什么场景？        → 正式汇报/沙龙分享/内部沟通？
+3. 色调偏好？        → 暖色/冷色/深色/浅色？有无品牌色？
+4. 图文比例？        → 图多（叙事型）/文多（数据型）？
+5. 参考风格？        → 有没有喜欢的 PPT 或品牌参考？
+```
+
+根据回答推荐最匹配的风格（见下方 16+1 风格库）。
+
+#### 步骤 2.2 — 选风格（16+1 选 + 参考学习）
 
 无品牌/模板时从以下选，有参考 PPTX 时用 `learn-from-pptx.py` 自动匹配：
 
+**经典系列（CyberPPT 继承）：**
 ```
 01 — 经典深红咨询风   #F3F4EF + #8B1E1E    → 战略/竞品/行业研究
 02 — 冷灰+勃艮第红    #F5F5F2 + #7A1F2B    → 财务/投研/风险
@@ -123,14 +138,21 @@ python3 scripts/learn-from-pptx.py --input reference.pptx --compare
 08 — 冷白灰+深紫      #F4F5F6 + #4B2E83    → AI/技术/创新
 ```
 
-**特选 09 — 清新高客风**（高客财富沙龙/传承专属）：
+**新增系列（duduppt v2.0）：**
 ```
-09 — 暖白+鼠尾草绿+金 #F8F9F7 + #5B9B8A + #C4A265
+09 — 清新高客风       #F8F9F7 + #5B9B8A    → 沙龙/传承（特选）
+10 — 电子杂志风       #FAFAF8 + #C73E3A    → 叙事/案例/品牌故事
+11 — 瑞士数据风       #FFFFFF + #E85D3A    → 数据/KPI/财务分析
+12 — 极光渐变风       #0A0E27 + #6C63FF    → AI/路演/创新
+13 — 黑胶唱片风       #F5F0E8 + #2C1810    → 文化/奢侈品/高端品牌
+14 — 莫兰迪色风       #F2F0EC + #9E7E7A    → 设计/美学/生活方式
+15 — 自然草木风       #F5F7F2 + #4A7C59    → ESG/环保/农业
+16 — 经典商务蓝       #F6F8FA + #1B5E8A    → 保险/银行/传统企业
 ```
 
-选定后整份PPT锁定同一视觉系统。
+选定后整份PPT锁定同一视觉系统。详细色板见 `references/palettes.md`。
 
-#### 步骤 2.2 — 固定字体层级
+#### 步骤 2.3 — 固定字体层级
 
 全篇用 15 级 Typography Scale，不要发明新层级：
 
@@ -152,7 +174,7 @@ python3 scripts/learn-from-pptx.py --input reference.pptx --compare
 | **T13** | KPI 大数字 | 18-28pt |
 | **T14** | 注释/来源/页脚 | 6.5-8pt |
 
-#### 步骤 2.3 — 选布局模板（v1.1 新增）
+#### 步骤 2.4 — 选布局模板
 
 从布局模板库中选择（`references/layouts/layout-library.md`），不再从零描述：
 
@@ -172,6 +194,31 @@ python3 scripts/learn-from-pptx.py --input reference.pptx --compare
 | 数据表格 | L12 | 明细数据/财报 |
 
 选模板后做微调：配色、边距、字体大小按实际内容适配。同一份 PPT 用 3-4 种不同布局轮换。
+
+#### 步骤 2.5 — 配图规划（v2.0 新增）
+
+为每页规划配图需求，在蓝图描述中标注：
+
+```
+配图标注格式：
+  [图片-类型: 比例: 位置: 描述]
+  示例: [图片-摄影: 16:9: 背景: 商务会议场景]
+  示例: [图片-图标: 1:1: 标题旁: 增长箭头]
+  示例: [图片-插画: 4:3: 右侧: 数据流示意图]
+```
+
+类型分类：
+- **摄影** — 真实照片（人物/场景/产品），用于封面、案例页
+- **图标** — 简单图形符号，用于标题装饰、列表标记
+- **插画** — 概念示意图/信息图，用于流程页、对比页
+- **图表** — 数据可视化，用 PPTX 原生 chart，不用图片
+- **Logo** — 品牌标识，需透明背景
+
+配图原则：
+- 叙事型页面（案例/故事）→ 配摄影图，占比 40-60%
+- 数据型页面（KPI/分析）→ 配图表/图标，占比 <20%
+- 同份 PPT 的图片风格必须统一（不要混用摄影和插画）
+- 所有配图在蓝图阶段标注 → Phase 3 统一生成/搜索
 
 **👉 出完后向主人汇报，等第二次确认再进阶段三**
 
@@ -305,10 +352,17 @@ for c in charts:
 每页执行顺序：
 1. 选布局模板 → 换算坐标（px → inch）
 2. 写 slide_manifest.json（记录该页文字、图片、组件、QA期望）
-3. 生成单页 PPTX
-4. LibreOffice 渲染导出 PNG 或结构检查
-5. 视觉 QA 检查
-6. 用户确认 → 再进下一页
+3. **生成演讲者备注**（v2.0 新增）— 根据标题 + 证据 + SO WHAT 自动生成每页备注
+4. 生成单页 PPTX
+5. LibreOffice 渲染导出 PNG 或结构检查
+6. 视觉 QA 检查
+7. 用户确认 → 再进下一页
+
+**演讲者备注生成规则：**
+- 备注 = 标题展开 + 关键数据强调 + SO WHAT 口语化表达
+- 控制在 60-100 字以内，口语化，适合现场讲
+- 非逐字稿，而是要点提示
+- 示例：标题"市场增长在修复，但价值正向结构性优势赛道转移" → 备注"2025年行业增长12%，主要集中在中高端赛道。建议关注赛道A和B，放弃低毛利赛道C。具体数据见XX报告。"
 
 #### 步骤 3.4 — QA 检查清单（v1.1 更新）
 
@@ -335,29 +389,6 @@ for c in charts:
 **单脚本优先原则（含 chart 时强制）：**
 - 含 chart 的 PPT → **必须用单个 pptxgenjs 实例**
 - 纯文字 >15 页 → 可以 batch 生成后 zipfile 合并（详见 `references/merge-and-qa.md`）
-
----
-
-## 🎨 清新风格配色（高客财富沙龙/传承专属）
-
-当主人做高客财富沙龙、家族信托类 PPT 时，优先用此配色：
-
-```js
-const C = {
-  bg:         'F8F9F7',   // 暖白底
-  card:       'FFFFFF',   // 白色卡片
-  accent:     '5B9B8A',   // 鼠尾草绿 - 主强调
-  accentDark: '3D7A68',   // 深绿 - 标题
-  gold:       'C4A265',   // 暖金 - KPI/数据标签
-  text:       '2D3436',   // 深灰文字
-  muted:      '8B9B90',   // 灰绿 - 注释
-  divider:    'E2E8E4',   // 分割线
-  light:      'E8F0EC',   // 浅绿 - 背景填充
-};
-const FONT = 'WenQuanYi Micro Hei';
-```
-
-**勿用深色商务调**（勃艮第红/黑金/深蓝）。
 
 ---
 
@@ -389,34 +420,38 @@ FULL_SLIDE_IMAGE_RATIO = 0.90
 GLOBAL_MIN_FONT_PT = 6.5
 ```
 
-## 🎨 设计原则
+## 🎨 设计原则（完整版见 references/design-principles.md）
 
-- 不要默认蓝色 — 颜色要反映主题
-- 不要素色白底+默认圆点 — 每页都要有视觉元素
-- 不要用accent lines装饰标题 — AI生成PPT的典型标志
-- 先渲染QA再交付 — 永远假设第一版有问题
-- 用子代理做视觉检查 — 自己盯着看会漏问题
-- **单脚本优先** — 含 chart 时强制单 pptxgenjs 实例
-- **`'column'` 是陷阱** — 竖柱状图用 `'bar'` + `barDir:'col'`
+1. **PPTX 优先，可编辑是底线** — 所有文字/图表必须 PowerPoint 可修改
+2. **结论先行，SO WHAT 必在** — 每页一个可挑战的判断句标题 + 行动建议
+3. **证据驱动，不编造数据** — 每个论点有 Evidence ID，缺失标记"需验证"
+4. **视觉服务于内容** — 颜色反映主题，全篇锁定同一视觉系统
+5. **克制优于炫技** — 一页一个结论，一个图表一个信息
+6. **结构优于装饰** — 靠字号/字体/留白组织信息，不靠阴影/3D/渐变
+7. **图文比例按内容定** — 叙事型图多，数据型图精
+8. **复杂图表原生重建** — 柱状图用 `'bar'` + `barDir:'col'`
+9. **单脚本优先** — 含 chart 时强制单 pptxgenjs 实例
+10. **私人材料不反哺** — 只沉淀方法论，不携带业务数据
 
 ## 📚 项目文件索引
 
 | 路径 | 说明 |
 |------|------|
 | `SKILL.md` | 本技能文件 |
-| `scripts/learn-from-pptx.py` | 🆕 从参考 PPTX 学习模板风格 |
-| `scripts/research-topic.py` | 🆕 Deep Research 多引擎搜索 |
-| `scripts/search-image.py` | 🆕 多来源 PPT 图片搜索 |
+| `scripts/learn-from-pptx.py` | 从参考 PPTX 学习模板风格 |
+| `scripts/research-topic.py` | Deep Research 多引擎搜索 |
+| `scripts/search-image.py` | 多来源 PPT 图片搜索 |
 | `scripts/generate-image.js` | AI 生图（Agnes API） |
 | `scripts/extract-palette.py` | 从图片提取配色 |
 | `scripts/generate-sample.js` | 示例 PPT 生成脚本 |
-| `references/layouts/layout-library.md` | 🆕 12 种布局模板库 |
-| `references/prompt-templates.md` | 🆕 各阶段 system prompt 模板 |
-| `references/multi-model-guide.md` | 🆕 多模型选择指南 |
+| `references/layouts/layout-library.md` | 12 种布局模板库 |
+| `references/palettes.md` | 🆕 **16+1 种配色代码（v2.0 扩至 16 种）** |
+| `references/design-principles.md` | 🆕 **10 条设计原则** |
+| `references/prompt-templates.md` | 各阶段 system prompt 模板 |
+| `references/multi-model-guide.md` | 多模型选择指南 |
 | `references/chart-type-anatomy.md` | pptxgenjs chart 坑分析 |
 | `references/merge-and-qa.md` | 多 batch 合并 + 中文 QA |
-| `references/palettes.md` | 8+1 种配色代码 |
 | `references/typography-scale.md` | C0/T1-T14 字体层级 |
-| `assets/palette-samples/` | 8 张风格样张 |
+| `assets/palette-samples/` | 风格样张 |
 | `examples/duduppt-sample.pptx` | 示例输出 |
 | `competitive-analysis.md` | 竞品深度对比分析 |
