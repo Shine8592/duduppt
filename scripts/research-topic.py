@@ -23,14 +23,11 @@ from pathlib import Path
 
 
 def search_tavily(query: str, max_results: int = 5) -> list:
-    """通过 Tavily API 搜索（优先）"""
+    """通过 Tavily API 搜索（结构化搜索，适合事实性查询）。"""
     try:
-        # 尝试调用 Hermes 的 web_search 工具（通过子进程）
-        # 如果 Hermes 环境不可用，fallback 到 curl Tavily
         import os
         api_key = os.environ.get('TAVILY_API_KEY', '')
         if not api_key:
-            # 尝试从 .env 读取
             env_path = Path(os.path.expanduser('~/.hermes/.env'))
             if env_path.exists():
                 for line in env_path.read_text().splitlines():
@@ -61,10 +58,104 @@ def search_tavily(query: str, max_results: int = 5) -> list:
                     "url": r.get('url', ''),
                     "content": r.get('content', '')[:500],
                     "score": r.get('score', 0),
+                    "engine": "tavily",
                 })
             return results
     except Exception as e:
         print(f"  ⚠️ Tavily search failed: {e}", file=sys.stderr)
+
+    return []
+
+
+def search_exa(query: str, max_results: int = 5) -> list:
+    """通过 Exa API 搜索（语义/神经搜索，适合找相似内容、深度内容）。"""
+    try:
+        import os
+        api_key = os.environ.get('EXA_API_KEY', '')
+        if not api_key:
+            env_path = Path(os.path.expanduser('~/.hermes/.env'))
+            if env_path.exists():
+                for line in env_path.read_text().splitlines():
+                    if line.startswith('EXA_API_KEY='):
+                        api_key = line.split('=', 1)[1].strip().strip("'\"")
+                        break
+
+        if api_key:
+            import urllib.request
+            data = json.dumps({
+                "query": query,
+                "num": max_results,
+                "type": "keyword",  # keyword | neural | auto
+                "contents": {"highlights": True},
+            }).encode()
+            req = urllib.request.Request(
+                "https://api.exa.ai/search",
+                data=data,
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                method="POST"
+            )
+            resp = urllib.request.urlopen(req, timeout=15)
+            result = json.loads(resp.read())
+            results = []
+            for r in result.get('results', []):
+                highlights = r.get('highlights', [])
+                results.append({
+                    "title": r.get('title', ''),
+                    "url": r.get('url', ''),
+                    "content": (highlights[0] if highlights else r.get('text', ''))[:500],
+                    "score": r.get('score', 0.5),
+                    "engine": "exa",
+                })
+            return results
+    except Exception as e:
+        print(f"  ⚠️ Exa search failed: {e}", file=sys.stderr)
+
+    return []
+
+
+def search_querit(query: str, max_results: int = 5) -> list:
+    """通过 Querit API 搜索（通用网页搜索，适合兜底）。"""
+    try:
+        import os
+        api_key = os.environ.get('QUERIT_API_KEY', '')
+        if not api_key:
+            env_path = Path(os.path.expanduser('~/.hermes/.env'))
+            if env_path.exists():
+                for line in env_path.read_text().splitlines():
+                    if line.startswith('QUERIT_API_KEY='):
+                        api_key = line.split('=', 1)[1].strip().strip("'\"")
+                        break
+
+        if api_key:
+            import urllib.request
+            params = urllib.parse.urlencode({
+                "q": query,
+                "n": max_results,
+            })
+            req = urllib.request.Request(
+                f"https://api.querit.ai/search?{params}",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "User-Agent": "duduppt/1.0",
+                }
+            )
+            resp = urllib.request.urlopen(req, timeout=15)
+            result = json.loads(resp.read())
+            results = []
+            for r in result.get('results', result.get('data', [])):
+                results.append({
+                    "title": r.get('title', ''),
+                    "url": r.get('url', r.get('link', '')),
+                    "content": r.get('content', r.get('snippet', ''))[:500],
+                    "score": r.get('score', r.get('relevance', 0.5)),
+                    "engine": "querit",
+                })
+            return results
+    except Exception as e:
+        print(f"  ⚠️ Querit search failed: {e}", file=sys.stderr)
 
     return []
 
@@ -256,25 +347,33 @@ def main():
     print(f"  最大来源: {max_results}")
     print(f"{'='*50}\n")
 
-    # ── 多引擎搜索 ──
+    # ── 三引擎搜索 ──
     all_results = []
 
-    print("  1/3 Tavily 搜索中...")
-    results = search_tavily(args.topic, max_results)
-    all_results.extend(results)
-    print(f"     → {len(results)} 条结果")
+    search_plan = [
+        ("Tavily", search_tavily),
+        ("Exa", search_exa),
+        ("Querit", search_querit),
+        ("SerpAPI", search_serpapi),
+        ("DuckDuckGo 兜底", search_fallback),
+    ]
 
-    if len(all_results) < max_results:
-        print("  2/3 SerpAPI 搜索中...")
-        results = search_serpapi(args.topic, max_results - len(all_results))
-        all_results.extend(results)
-        print(f"     → {len(results)} 条结果")
-
-    if len(all_results) < max_results:
-        print("  3/3 兜底搜索中...")
-        results = search_fallback(args.topic, max_results - len(all_results))
-        all_results.extend(results)
-        print(f"     → {len(results)} 条结果")
+    for name, fn in search_plan:
+        if len(all_results) >= max_results:
+            break
+        remain = max_results - len(all_results)
+        if remain <= 0:
+            break
+        print(f"  {name} 搜索中...")
+        try:
+            results = fn(args.topic, remain)
+            if results:
+                print(f"     → {len(results)} 条结果")
+                all_results.extend(results)
+            else:
+                print(f"     → 无结果")
+        except Exception as e:
+            print(f"     → 出错: {e}")
 
     # 去重
     seen_urls = set()
