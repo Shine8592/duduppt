@@ -1,13 +1,13 @@
 ---
-name: cyber-ppt
-description: "主人说'做个PPT'时用这个技能。把文档/数据/想法转成咨询风格高密度PPTX。三阶段：证据分析→视觉蓝图→PPTX生成+QA。已发布为独立项目 duduppt (github.com/Shine8592/duduppt)。"
+name: duduppt
+description: "主人说'做个PPT'时用这个技能。把文档/数据/想法转成咨询风格高密度PPTX。三阶段：证据分析→视觉蓝图→PPTX生成+QA。GitHub: github.com/Shine8592/duduppt。"
 ---
 
-# 🎯 嘟嘟的咨询风PPT流水线
+# 🎯 duduppt — 嘟嘟的咨询风PPT流水线
 
-> 来源：[CyberPPT](https://github.com/crazyykhllc-bit/CyberPPT)（crazyykhllc-bit/CyberPPT）三阶段方法论
-> 已发布为独立项目：[duduppt](https://github.com/Shine8592/duduppt) — GitHub
-> 经 SkillOpt 流程验证（Rollout→Reflect→Update→Gate→Ship）
+> 来源：[CyberPPT](https://github.com/crazyykhllc-bit/CyberPPT) 三阶段方法论
+> GitHub 项目：[duduppt](https://github.com/Shine8592/duduppt)
+> 升级 v1.1：Deep Research + 模板学习 + 布局库 + 多模型 + 多图源
 
 ## 触发条件
 
@@ -28,7 +28,30 @@ description: "主人说'做个PPT'时用这个技能。把文档/数据/想法�
 
 ---
 
-## 三阶段执行流程
+## 四阶段执行流程（v1.1 新增 Phase 0）
+
+### 🔍 阶段 0：Deep Research（自动补证据）
+
+> 当主人没有提供完整材料时，先自动搜索补充背景信息。
+
+**目标：填补证据缺口，为 Phase 1 提供素材**
+
+1. 确定搜索关键词（从任务描述中提取 3-5 个关键方向）
+2. 运行多引擎搜索：
+   ```bash
+   python3 scripts/research-topic.py --topic "中国财富管理市场 2026" --depth deep --sources 8
+   ```
+3. 搜索结果整理为结构化证据输入：
+   - 核心结论（3-5 条）
+   - 关键数据点（含来源和置信度）
+   - 数据缺口清单（标记"需人工验证"）
+   - 建议进一步搜索方向
+
+**搜索策略：** Tavily → SerpAPI → DuckDuckGo 三层兜底，确保总有结果
+
+**👉 将搜索结果喂给 Phase 1 证据表**
+
+---
 
 ### 📋 阶段一：分析（产出：证据表 + 故事线 + 逐页大纲）
 
@@ -73,23 +96,36 @@ description: "主人说'做个PPT'时用这个技能。把文档/数据/想法�
 
 ---
 
-### 🎨 阶段二：视觉蓝图（产出：风格选择 + 逐页蓝图描述）
+### 🎨 阶段二：视觉蓝图（产出：风格选择 + 逐页布局）
 
 **目标：确定视觉方向，规划每页的布局和视觉元素**
 
-#### 步骤 2.1 — 选风格（8选1）
+#### 步骤 2.0 — 参考学习（可选）
 
-无品牌/模板时从以下选，有品牌/模板时直接沿用：
+如果主人说"按这个风格做"或提供了参考 PPTX：
+```bash
+python3 scripts/learn-from-pptx.py --input reference.pptx --compare
+```
+自动提取：配色方案、字体、布局特征 → 匹配最接近的 duduppt 预设风格
+
+#### 步骤 2.1 — 选风格（8选1 + 1特选 + 参考学习）
+
+无品牌/模板时从以下选，有参考 PPTX 时用 `learn-from-pptx.py` 自动匹配：
 
 ```
-01 — 经典深红咨询风  #F3F4EF + #8B1E1E    → 战略/竞品/行业研究
-02 — 冷灰+勃艮第红   #F5F5F2 + #7A1F2B    → 财务/投研/风险
-03 — 暖象牙+暗酒红   #F4F1EA + #8A1538    → 品牌/消费品/电商
-04 — 象牙白+深蓝     #F7F6F0 + #12355B    → 科技/SaaS/AI
-05 — 浅灰白+墨绿     #F2F3EF + #1F5B4D    → 可持续/增长
-06 — 纸张米色+铜棕   #F4F0E8 + #9A5A2E    → 消费/零售/奢侈品
-07 — 纯净浅灰+黑金   #F6F6F4 + #A87932    → 高管汇报/融资/董事会
-08 — 冷白灰+深紫     #F4F5F6 + #4B2E83    → AI/技术/创新
+01 — 经典深红咨询风   #F3F4EF + #8B1E1E    → 战略/竞品/行业研究
+02 — 冷灰+勃艮第红    #F5F5F2 + #7A1F2B    → 财务/投研/风险
+03 — 暖象牙+暗酒红    #F4F1EA + #8A1538    → 品牌/消费品/电商
+04 — 象牙白+深蓝      #F7F6F0 + #12355B    → 科技/SaaS/AI
+05 — 浅灰白+墨绿      #F2F3EF + #1F5B4D    → 可持续/增长
+06 — 纸张米色+铜棕    #F4F0E8 + #9A5A2E    → 消费/零售/奢侈品
+07 — 纯净浅灰+黑金    #F6F6F4 + #A87932    → 高管汇报/融资/董事会
+08 — 冷白灰+深紫      #F4F5F6 + #4B2E83    → AI/技术/创新
+```
+
+**特选 09 — 清新高客风**（高客财富沙龙/传承专属）：
+```
+09 — 暖白+鼠尾草绿+金 #F8F9F7 + #5B9B8A + #C4A265
 ```
 
 选定后整份PPT锁定同一视觉系统。
@@ -116,48 +152,69 @@ description: "主人说'做个PPT'时用这个技能。把文档/数据/想法�
 | **T13** | KPI 大数字 | 18-28pt |
 | **T14** | 注释/来源/页脚 | 6.5-8pt |
 
-#### 步骤 2.3 — 逐页蓝图描述
+#### 步骤 2.3 — 选布局模板（v1.1 新增）
 
-为每页生成蓝图描述，包含：
-- 页面标题和结论
-- 布局类型（上结论下图表 / 左图表右解读 / 矩阵 / 流程 / 时间线 等）
-- 每个区域的视觉元素、颜色比例
-- 图表类型和数据来源
-- 哪些区域需要保留为图片（复杂插画/照片/Logo）
+从布局模板库中选择（`references/layouts/layout-library.md`），不再从零描述：
+
+| 模板 | 编号 | 最佳场景 |
+|------|------|---------|
+| 封面页 | L01 | PPT 首页/章节封面 |
+| 目录页 | L02 | 内容导航/议程 |
+| 章节标题页 | L03 | 章节切换过渡 |
+| 结论先行页 | L04 | 核心论点/关键发现 |
+| 左文右图 | L05 | 产品介绍/案例 |
+| 数据图表页 | L06 | KPI 汇报/数据分析 |
+| 对比页 | L07 | 竞品对比/方案评估 |
+| 时间线 | L08 | 项目计划/里程碑 |
+| 流程页 | L09 | 业务流程/方法论 |
+| 矩阵象限 | L10 | 战略定位/优先级 |
+| 引用案例 | L11 | 客户背书/数据引用 |
+| 数据表格 | L12 | 明细数据/财报 |
+
+选模板后做微调：配色、边距、字体大小按实际内容适配。同一份 PPT 用 3-4 种不同布局轮换。
+
+**👉 出完后向主人汇报，等第二次确认再进阶段三**
 
 ---
 
-## 🖼️ 图片能力（生图 + 识图 + 配图）
+## 🖼️ 图片能力（AI 生图 + 搜索 + 识图 + 配图）
 
 ### 图片从哪来
 
-| 来源 | 能力 | 工具 |
-|------|------|------|
-| **已有图片** | 我可以用 vision_analyze 读取图片，识别颜色、布局、元素 | `vision_analyze` |
-| **AI 生成** | Agnes AI API 已配好，随时生图 | `agnes-image` 技能 |
-| **外部素材** | 品牌 Logo、产品截图、照片等由主人提供 | 直接插入 PPTX |
+| 来源 | 能力 | 工具/脚本 |
+|------|------|-----------|
+| **AI 生成** | Agnes API 生图，适配 PPT 尺寸 | `scripts/generate-image.js` |
+| **图库搜索** | Pexels / Unsplash / Pixabay 免费图库 | `scripts/search-image.py` |
+| **已有图片** | vision_analyze 读取图片，识别颜色/布局/元素 | `vision_analyze` 工具 |
+| **提取配色** | 从图片/Logo 提取主色，自动生成 PPT 色板 | `scripts/extract-palette.py` |
+| **参考学习** | 从参考 PPTX 提取全套风格 | `scripts/learn-from-pptx.py` |
+| **外部素材** | 品牌 Logo、产品截图、照片 | 直接插入 PPTX |
 
-### 如何用图片美化 PPT
-
-**方案 A：AI 生图（Agnes API）**
+### 快速生图（AI）
 ```bash
-# 示例：生成一张科技风插画作为PPT背景
-source ~/.hermes/.env
-curl -s -H "Authorization: Bearer $AGNES_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "agnes-image-2.1-flash",
-    "prompt": "abstract technology background, blue and white gradient, clean lines, minimalist, 16:9",
-    "n": 1,
-    "size": "1024x576"
-  }' \
-  "https://apihub.agnes-ai.com/v1/images/generations"
+node scripts/generate-image.js --prompt "科技蓝渐变背景" --style bg --out cover.png
+```
+支持 style: `bg` (16:9), `hero` (4:3), `icon` (1:1)
+
+### 图库搜索（免费）
+```bash
+python3 scripts/search-image.py --query "business meeting" --source pexels --count 3
+python3 scripts/search-image.py --query "city skyline" --download ./images/
+```
+自动尝试 Pexels → Unsplash → Pixabay，需要对应 API key（免费注册）。
+
+### 从参考图提取配色
+```bash
+python3 scripts/extract-palette.py --input brand-logo.png --format json
 ```
 
-**方案 B：分析已有图片提取配色**
-当我看到主人提供的参考图/品牌 Logo 时，可以用 vision_analyze 提取主色 → 用该色板做 PPT 视觉风格。
+### 从参考 PPTX 学习风格（v1.1 新增）
+```bash
+python3 scripts/learn-from-pptx.py --input reference.pptx --compare
+```
+输出 style config JSON + 匹配最接近的 duduppt 预设风格。
 
-**方案 C：图片在 PPTX 中的使用原则**
+### 图片在 PPTX 中的使用原则
 - **封面**：大面积 AI 生成图/高清照片做背景（配合深色遮罩 + 白字）
 - **内容页**：小面积配图（图标、插画、图表背景），不影响文字可编辑性
 - **图表**：柱状图/折线图/表格必须原生重建，不可用图片替代
@@ -169,9 +226,7 @@ curl -s -H "Authorization: Bearer $AGNES_API_KEY" \
 |------|----------|
 | 用整页截图当 PPT 背景 | 图片只做装饰/配图，主要信息层必须可编辑 |
 | 把文字烘焙进图片 | 标题/正文/KPI/来源必须原生文字 |
-| 随意用风格不统一的网图 | AI 生图或主人提供的高质量图片 |
-
-**👉 出完后向主人汇报，等第二次确认再进阶段三**
+| 随意用风格不统一的网图 | AI 生图或合规图库搜索 |
 
 ---
 
@@ -185,7 +240,7 @@ curl -s -H "Authorization: Bearer $AGNES_API_KEY" \
 |------|------|
 | 高视觉保真、复杂布局 | `pptxgenjs`（Node.js） |
 | 快速出稿、模板编辑 | `python-pptx` |
-| 渲染QA | `LibreOffice` → PDF → PNG（优先）或 python-pptx 结构检查（备选） |
+| 渲染QA | `LibreOffice` → PDF → PNG（优先）或 zipfile 结构检查（兜底） |
 
 **环境坑（已验证解决）：**
 ```bash
@@ -197,55 +252,65 @@ npm install pptxgenjs --save
 
 **核心策略：** 复杂视觉（照片/Logo/插画/纹理）可保留为图片，但主要文字、标题、数字、标签、来源必须原生可编辑。
 
-#### 步骤 3.2 — QA 流程（含 Fallback）
+#### 步骤 3.2 — QA 流程
 
-**优先 QA：LibreOffice 渲染**
-```bash
-# 杀残留进程 + 转换 PDF
-killall -9 soffice.bin 2>/dev/null; sleep 1
-libreoffice --headless --convert-to pdf output.pptx
+**QA 优先级：**
+1. **LibreOffice 渲染** → PDF → PNG（像素级验证）
+2. **stdlib-only 结构检查**（LibreOffice 不可用时兜底）
 
-# PDF → PNG
-pdftoppm -jpeg -r 150 output.pdf slide
-```
-
-**Fallback QA（LibreOffice 不可用时）：python-pptx 结构检查**
+**结构检查（零依赖，永远可用）：**
 ```python
-from pptx import Presentation
-from pptx.util import Emu
+import zipfile, re
+z = zipfile.ZipFile('deck.pptx')
+assert z.testzip() is None, 'ZIP corrupted'
+slides = sorted([n for n in z.namelist() if re.match(r'ppt/slides/slide\d+\.xml$', n)],
+                key=lambda x: int(re.search(r'(\d+)', x).group(1)))
+for n in slides:
+    xml = z.read(n).decode('utf-8', 'ignore')
+    texts = [t for t in re.findall(r'<a:t>([^<]*)</a:t>', xml) if t.strip()]
+    print(n.split('/')[-1], '|', len(texts), '|', (texts[0] if texts else '(empty)')[:46])
 
-prs = Presentation('output.pptx')
-print(f'Slides: {len(prs.slides)}')
-w_in = prs.slide_width / 914400
-h_in = prs.slide_height / 914400
-print(f'Size: {w_in:.3f} x {h_in:.3f} inches (16:9={1.75 <= w_in/h_in <= 1.79})')
+# 字体检查（中文防乱码）
+allfonts = set()
+for n in slides:
+    allfonts.update(re.findall(r'typeface="([^"]+)"', z.read(n).decode('utf-8','ignore')))
+assert any('WenQuanYi' in f or 'Micro Hei' in f for f in allfonts), 'No Chinese font bound!'
 
-for i, slide in enumerate(prs.slides):
-    texts = []
-    pics = 0
-    for s in slide.shapes:
-        if s.has_text_frame:
-            for p in s.text_frame.paragraphs:
-                if p.text.strip(): texts.append(p.text.strip()[:60])
-        if s.shape_type == 13: pics += 1
-    print(f'Slide {i+1}: {len(slide.shapes)} shapes, {pics} pics')
-    print(f'  Text preview: {texts[0] if texts else "(empty)"}')
-    print(f'  Pics: {\"⚠️\" if pics else \"✅\"} ({pics} pictures)')
+# 占位符扫描
+blob = b''.join(z.read(n) for n in slides)
+for bad in ['Lorem',' ipsum','单击此处','xxxx','TODO']:
+    assert bad.encode() not in blob, f'placeholder found: {bad}'
+
+# chart 文件检查
+charts = [n for n in z.namelist() if 'charts/chart' in n and n.endswith('.xml')]
+for c in charts:
+    cx = z.read(c).decode('utf-8')
+    dir_pos = cx.find('barDir')
+    if dir_pos > -1:
+        print(f'{c}: has barDir ("col" expected for column charts)')
 ```
+
+**⚠️ Chart Type 大坑（pptxgenjs）：**
+- `slide.addChart('column', data, opts)` **不报错但产出空白页**
+- **修复：** 竖柱状图用 `'bar'` + `barDir:'col'`：
+  ```js
+  // ❌ 空白页：
+  slide.addChart('column', data, { x, y, w, h });
+  // ✅ 可工作：
+  slide.addChart('bar', data, { x, y, w, h, barDir: 'col' });
+  ```
 
 #### 步骤 3.3 — 逐页生成流程
 
 每页执行顺序：
-1. 写蓝图 → 换算坐标（px → inch）
+1. 选布局模板 → 换算坐标（px → inch）
 2. 写 slide_manifest.json（记录该页文字、图片、组件、QA期望）
 3. 生成单页 PPTX
-4. PowerPoint/LibreOffice 渲染导出 PNG
+4. LibreOffice 渲染导出 PNG 或结构检查
 5. 视觉 QA 检查
 6. 用户确认 → 再进下一页
 
-#### 步骤 3.4 — QA 检查清单
-
-**严格检查以下每一项：**
+#### 步骤 3.4 — QA 检查清单（v1.1 更新）
 
 ```
 □ 所有页面都存在
@@ -259,19 +324,40 @@ for i, slide in enumerate(prs.slides):
 □ 文字没溢出容器（卡片、表格、结论条）
 □ 字体层级符合 C0/T1-T14
 □ 标签没压住图标/节点/曲线
-□ 无语言元数据残留在页面（如 target_language）
 □ 无整页蓝图截图当背景
+□ 柱状图 barDir 正确（"col" 非 "bar"）
+□ 中文字体已绑定（WenQuanYi Micro Hei 防方框）
+□ 无语言元数据残留在页面
 ```
-
-**👉 最终交付：PPTX + QA 报告**
 
 #### 步骤 3.5 — 最终合并
 
-逐页通过后，合并单页 PPTX 为完整 deck。合并后做全篇回归验证：
-- 所有页面存在
-- 背景/主题一致
-- 无页面偏移/变形
-- 字体无变化
+**单脚本优先原则（含 chart 时强制）：**
+- 含 chart 的 PPT → **必须用单个 pptxgenjs 实例**
+- 纯文字 >15 页 → 可以 batch 生成后 zipfile 合并（详见 `references/merge-and-qa.md`）
+
+---
+
+## 🎨 清新风格配色（高客财富沙龙/传承专属）
+
+当主人做高客财富沙龙、家族信托类 PPT 时，优先用此配色：
+
+```js
+const C = {
+  bg:         'F8F9F7',   // 暖白底
+  card:       'FFFFFF',   // 白色卡片
+  accent:     '5B9B8A',   // 鼠尾草绿 - 主强调
+  accentDark: '3D7A68',   // 深绿 - 标题
+  gold:       'C4A265',   // 暖金 - KPI/数据标签
+  text:       '2D3436',   // 深灰文字
+  muted:      '8B9B90',   // 灰绿 - 注释
+  divider:    'E2E8E4',   // 分割线
+  light:      'E8F0EC',   // 浅绿 - 背景填充
+};
+const FONT = 'WenQuanYi Micro Hei';
+```
+
+**勿用深色商务调**（勃艮第红/黑金/深蓝）。
 
 ---
 
@@ -286,27 +372,21 @@ for i, slide in enumerate(prs.slides):
 | 一次性生成≥3页终版 | 质量失控 |
 | 跳过SO WHAT只放图表 | 咨询PPT必须有含义 |
 | 跳过用户确认门 | 流程失控 |
+| 把主人的私人/业务 PPT 内容上传到公开项目仓库 | 私人信息绝不外泄 |
 
-## ⚙️ 关键技术参数（源码沉淀）
+反哺项目只沉淀**去内容化的方法论**，绝不携带业务数据/演讲稿/客户信息。
+
+---
+
+## ⚙️ 关键技术参数
 
 ```python
-# 容差
 P0容差 = 3px（最大6px）    # 标题/主图/SO WHAT/页脚/关键数字
 P1容差 = 4px（最大8px）    # 卡片/图标/标签/箭头/表格
 P2容差 = 6px（最大12px）   # 装饰线/纹理/背景纹样
-
-# 图片检测阈值
 LARGE_IMAGE_RATIO = 0.40   # >40%页面面积=大图风险
-FULL_SLIDE_IMAGE_RATIO = 0.90  # >90%=整页背景风险
-
-# 曲线
-CORE_CURVE_MIN_POINTS = 16  # 核心曲线最少采样点
-
-# 字体
-GLOBAL_MIN_FONT_PT = 6.5    # 任何文字不得小于此值
-
-# 像素对比
-PIXEL_DIFF_TOLERANCE = 18   # 蓝图vs渲染的mean abs diff容差
+FULL_SLIDE_IMAGE_RATIO = 0.90
+GLOBAL_MIN_FONT_PT = 6.5
 ```
 
 ## 🎨 设计原则
@@ -316,7 +396,27 @@ PIXEL_DIFF_TOLERANCE = 18   # 蓝图vs渲染的mean abs diff容差
 - 不要用accent lines装饰标题 — AI生成PPT的典型标志
 - 先渲染QA再交付 — 永远假设第一版有问题
 - 用子代理做视觉检查 — 自己盯着看会漏问题
+- **单脚本优先** — 含 chart 时强制单 pptxgenjs 实例
+- **`'column'` 是陷阱** — 竖柱状图用 `'bar'` + `barDir:'col'`
 
-## 📚 参考
+## 📚 项目文件索引
 
-CyberPPT（crazyykhllc-bit/CyberPPT）：SCR论证、Typography Scale C0-T14、15道门禁体系、精确追踪原则、8种视觉风格。
+| 路径 | 说明 |
+|------|------|
+| `SKILL.md` | 本技能文件 |
+| `scripts/learn-from-pptx.py` | 🆕 从参考 PPTX 学习模板风格 |
+| `scripts/research-topic.py` | 🆕 Deep Research 多引擎搜索 |
+| `scripts/search-image.py` | 🆕 多来源 PPT 图片搜索 |
+| `scripts/generate-image.js` | AI 生图（Agnes API） |
+| `scripts/extract-palette.py` | 从图片提取配色 |
+| `scripts/generate-sample.js` | 示例 PPT 生成脚本 |
+| `references/layouts/layout-library.md` | 🆕 12 种布局模板库 |
+| `references/prompt-templates.md` | 🆕 各阶段 system prompt 模板 |
+| `references/multi-model-guide.md` | 🆕 多模型选择指南 |
+| `references/chart-type-anatomy.md` | pptxgenjs chart 坑分析 |
+| `references/merge-and-qa.md` | 多 batch 合并 + 中文 QA |
+| `references/palettes.md` | 8+1 种配色代码 |
+| `references/typography-scale.md` | C0/T1-T14 字体层级 |
+| `assets/palette-samples/` | 8 张风格样张 |
+| `examples/duduppt-sample.pptx` | 示例输出 |
+| `competitive-analysis.md` | 竞品深度对比分析 |
