@@ -131,26 +131,28 @@ def search_querit(query: str, max_results: int = 5) -> list:
 
         if api_key:
             import urllib.request
-            params = urllib.parse.urlencode({
-                "q": query,
-                "n": max_results,
-            })
+            data = json.dumps({
+                "query": query,
+                "count": max_results,
+            }).encode()
             req = urllib.request.Request(
-                f"https://api.querit.ai/search?{params}",
+                "https://api.querit.ai/v1/search",
+                data=data,
                 headers={
                     "Authorization": f"Bearer {api_key}",
-                    "User-Agent": "duduppt/1.0",
-                }
+                    "Content-Type": "application/json",
+                },
+                method="POST"
             )
             resp = urllib.request.urlopen(req, timeout=15)
             result = json.loads(resp.read())
             results = []
-            for r in result.get('results', result.get('data', [])):
+            for r in result.get('results', {}).get('result', result.get('data', [])):
                 results.append({
                     "title": r.get('title', ''),
-                    "url": r.get('url', r.get('link', '')),
-                    "content": r.get('content', r.get('snippet', ''))[:500],
-                    "score": r.get('score', r.get('relevance', 0.5)),
+                    "url": r.get('url', ''),
+                    "content": r.get('snippet', r.get('content', ''))[:500],
+                    "score": r.get('score', 0.5),
                     "engine": "querit",
                 })
             return results

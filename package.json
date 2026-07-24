@@ -1,0 +1,26 @@
+{
+  "name": "duduppt",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">   <h1>🎯 duduppt</h1>   <p><strong>把文档、数据和想法变成咨询风格的高密度 PPTX</strong></p>   <p>Hermes Agent 技能 · 四阶段方法论 · 原生可编辑 PPTX 输出</p>   <p>     <a href=\"https://github.com/Shine8592/duduppt/blob/main/LICENSE\"><img src=\"https://img.shields.io/badge/license-MIT-blue.svg\" alt=\"MIT License\"></a>     <a href=\"https://github.com/Shine8592/duduppt\"><img src=\"https://img.shields.io/github/stars/Shine8592/duduppt?style=flat\" alt=\"Stars\"></a>   </p> </div>",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Shine8592/duduppt.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Shine8592/duduppt/issues"
+  },
+  "homepage": "https://github.com/Shine8592/duduppt#readme",
+  "dependencies": {
+    "pptxgenjs": "^4.0.1"
+  }
+}

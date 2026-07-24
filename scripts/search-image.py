@@ -57,7 +57,10 @@ def search_pexels(query: str, count: int = 3) -> list:
     url = f"https://api.pexels.com/v1/search?{params}"
 
     try:
-        req = urllib.request.Request(url, headers={"Authorization": api_key})
+        req = urllib.request.Request(url, headers={
+            "Authorization": api_key,
+            "User-Agent": "Mozilla/5.0 (X11; Linux) AppleWebKit/537.36",
+        })
         resp = urllib.request.urlopen(req, timeout=10)
         data = json.loads(resp.read())
         results = []
