@@ -1,3 +1,15 @@
+// duduppt 示例 PPTX 生成脚本
+//
+// ⚠️ 中文字体说明（重要）：
+//   pptxgenjs 的 fontFace 会同时写入 <a:latin> 与 <a:ea> 两个字体槽位，
+//   所以写 'Arial' 时中文槽位也是 Arial —— 而 Arial 没有中文字形，
+//   中文会静默回退到系统默认字体。
+//
+//   本脚本在生成后自动调用 scripts/fix-cjk-font.py 修正 <a:ea> 槽位为
+//   真正的中文字体（默认「微软雅黑」）。
+//   如需其他字体：node scripts/generate-sample.js  后用
+//   python scripts/fix-cjk-font.py --deck <out.pptx> --font "Noto Sans CJK SC"
+
 const pptxgen = require('pptxgenjs');
 
 const pptx = new pptxgen();
@@ -247,6 +259,24 @@ slide5.addText('5  |  duduppt  |  Confidential', {
 });
 
 // 输出
-pptx.writeFile({ fileName: '/tmp/duduppt-rollout/duduppt-sample.pptx' })
-  .then(() => console.log('✅ PPTX generated: /tmp/duduppt-rollout/duduppt-sample.pptx'))
+const OUT = process.env.DUDUPPt_OUT || '/tmp/duduppt-rollout/duduppt-sample.pptx';
+pptx.writeFile({ fileName: OUT })
+  .then(() => {
+    console.log('✅ PPTX generated: ' + OUT);
+    // 关键后处理：修正中文字体东亚槽位（<a:ea>）
+    // pptxgenjs 无法直接设置 ea 槽位，必须用 XML 后处理。
+    const { execFileSync } = require('child_process');
+    const path = require('path');
+    const fixer = path.join(__dirname, 'fix-cjk-font.py');
+    try {
+      execFileSync('python3', [fixer, '--deck', OUT], { stdio: 'inherit' });
+    } catch (e1) {
+      try {
+        execFileSync('python', [fixer, '--deck', OUT], { stdio: 'inherit' });
+      } catch (e2) {
+        console.warn('⚠️ 未能自动修正中文字体，请手动运行：');
+        console.warn('   python scripts/fix-cjk-font.py --deck ' + OUT);
+      }
+    }
+  })
   .catch(err => console.error(err));
