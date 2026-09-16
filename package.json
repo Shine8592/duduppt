@@ -1,26 +1,37 @@
 {
   "name": "duduppt",
-  "version": "1.0.0",
-  "description": "<div align=\"center\">   <h1>🎯 duduppt</h1>   <p><strong>把文档、数据和想法变成咨询风格的高密度 PPTX</strong></p>   <p>Hermes Agent 技能 · 四阶段方法论 · 原生可编辑 PPTX 输出</p>   <p>     <a href=\"https://github.com/Shine8592/duduppt/blob/main/LICENSE\"><img src=\"https://img.shields.io/badge/license-MIT-blue.svg\" alt=\"MIT License\"></a>     <a href=\"https://github.com/Shine8592/duduppt\"><img src=\"https://img.shields.io/github/stars/Shine8592/duduppt?style=flat\" alt=\"Stars\"></a>   </p> </div>",
-  "main": "index.js",
-  "directories": {
-    "example": "examples"
-  },
+  "version": "2.0.0",
+  "description": "Consulting-grade PPTX generator skill: four-phase methodology (research -> analysis -> visual blueprint -> PPTX + QA), 16+1 visual styles, evidence-table driven, native editable PPTX output.",
+  "private": true,
+  "type": "commonjs",
+  "main": "scripts/generate-sample.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/generate-sample.js --dry-run",
+    "sample": "node scripts/generate-sample.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Shine8592/duduppt.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "pptx",
+    "powerpoint",
+    "claude-skill",
+    "agent-skill",
+    "consulting",
+    "presentation",
+    "pptxgenjs",
+    "deck"
+  ],
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Shine8592/duduppt/issues"
   },
   "homepage": "https://github.com/Shine8592/duduppt#readme",
   "dependencies": {
     "pptxgenjs": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }
