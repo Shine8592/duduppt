@@ -3,8 +3,10 @@
   <p><strong>把文档、数据和想法变成咨询风格的高密度 PPTX</strong></p>
   <p>Hermes Agent 技能 · 四阶段方法论 · 原生可编辑 PPTX 输出</p>
   <p>
+    <a href="https://github.com/Shine8592/duduppt/actions/workflows/ci.yml"><img src="https://github.com/Shine8592/duduppt/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="https://github.com/Shine8592/duduppt/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
     <a href="https://github.com/Shine8592/duduppt"><img src="https://img.shields.io/github/stars/Shine8592/duduppt?style=flat" alt="Stars"></a>
+    <a href="https://github.com/Shine8592/duduppt"><img src="https://img.shields.io/badge/version-2.0.0-green.svg" alt="Version"></a>
   </p>
 </div>
 
@@ -27,7 +29,7 @@ duduppt 是一个 **Hermes Agent 技能**，基于 [CyberPPT](https://github.com
 | **15 级 Typography Scale** | C0-T14 完整字体层级体系，源自 MBB 咨询标准 |
 | **12 种布局模板** | 封面/目录/对比/时间线/数据页等，即选即用 |
 | **逐页交付** | 每页做完确认再下一页，不批量翻车 |
-| **15 项 QA 检查** | 零依赖 zipfile 结构检查 + 中文字体绑定验证 |
+| **分档 QA（机械/视觉分离）** | 机械项零依赖秒判（barDir / 中文双槽位 / 占位符）+ 视觉项渲染验收 |
 | **Deep Research 自动补证据** | Tavily + Exa + Querit 三引擎搜索填补数据缺口 |
 | **从参考 PPTX 学习风格** | 自动提取配色/字体/布局，匹配最接近的预设风格 |
 | **配图自动规划** | 蓝图标注配图类型/比例/位置，统一管理 |
