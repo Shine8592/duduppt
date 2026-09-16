@@ -3,9 +3,23 @@ name: CI
 on:
   push:
     branches: [main]
+    # 只在可能影响自检结果的文件变更时触发，减少无谓运行
+    paths:
+      - "scripts/**"
+      - "tests/**"
+      - "references/**"
+      - "SKILL.md"
+      - "README.md"
+      - "package.json"
+      - ".github/workflows/**"
   pull_request:
     branches: [main]
   workflow_dispatch:
+
+# 同一分支只保留最新一次运行，旧的自动取消（避免堆积）
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -27,11 +41,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 注意：不要加 `cache: pip`。
+      # setup-python 的 pip 缓存需要一个依赖文件（requirements.txt / pyproject.toml）
+      # 来计算缓存键；本项目是 Agent Skill，没有这些文件，会导致该步骤直接失败。
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          cache: pip
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -80,7 +96,7 @@ jobs:
           from pathlib import Path
           root = Path(".")
           text = (root / "SKILL.md").read_text(encoding="utf-8")
-          refs = set(re.findall(r"`((?:scripts|references|assets|examples)/[^`\s]+)`", text))
+          refs = set(re.findall(r"`((?:scripts|references|assets|examples|docs)/[^`\s]+)`", text))
           missing = [r for r in sorted(refs) if not (root / r).exists()]
           print(f"checked {len(refs)} references")
           if missing:
