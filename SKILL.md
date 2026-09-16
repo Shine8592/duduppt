@@ -47,7 +47,8 @@ description: "主人说'做个PPT'时用这个技能。把文档/数据/想法�
    - 数据缺口清单（标记"需人工验证"）
    - 建议进一步搜索方向
 
-**搜索策略：** Tavily → SerpAPI → DuckDuckGo 三层兜底，确保总有结果
+**搜索策略：** Tavily → Exa → Querit → SerpAPI → DuckDuckGo 逐级兜底，确保总有结果
+（各引擎在 `scripts/research-topic.py` 内自动降级，无需手动切换）
 
 **👉 将搜索结果喂给 Phase 1 证据表**
 
@@ -317,11 +318,28 @@ for n in slides:
     texts = [t for t in re.findall(r'<a:t>([^<]*)</a:t>', xml) if t.strip()]
     print(n.split('/')[-1], '|', len(texts), '|', (texts[0] if texts else '(empty)')[:46])
 
-# 字体检查（中文防乱码）
-allfonts = set()
+# 字体检查（中文防乱码）—— 必须区分 latin / ea 两个槽位
+# 坑：只查 typeface 出现过是不够的。中文字体若写在 <a:latin> 槽位，
+#     中文根本不生效（静默失效）；必须确认 <a:ea> 槽位。
+CJK_FONTS = {'微软雅黑', 'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC',
+             '思源黑体', 'Hiragino Sans GB', 'PingFang SC', '宋体', 'SimSun'}
+ea_fonts, problems = set(), []
 for n in slides:
-    allfonts.update(re.findall(r'typeface="([^"]+)"', z.read(n).decode('utf-8','ignore')))
-assert any('WenQuanYi' in f or 'Micro Hei' in f for f in allfonts), 'No Chinese font bound!'
+    xml = z.read(n).decode('utf-8', 'ignore')
+    ea = set(re.findall(r'<a:ea typeface="([^"]+)"', xml))
+    latin = set(re.findall(r'<a:latin typeface="([^"]+)"', xml))
+    ea_fonts |= ea
+    has_cjk = bool(re.search(r'<a:t>[^<]*[\u4e00-\u9fff]', xml))
+    if has_cjk and not ea:
+        problems.append(f'{n}: CJK_NO_EA 有中文但未设 <a:ea>')
+    if (latin & CJK_FONTS) and not ea:
+        problems.append(f'{n}: CJK_FACE_UNREACHED 中文字体写在 latin 槽位，不生效')
+assert not problems, '中文字体问题: ' + '; '.join(problems)
+assert ea_fonts & CJK_FONTS, f'CJK_NO_EA: 未绑定中文字体 ea 槽位 (当前: {ea_fonts})'
+print(f'中文字体 OK: {ea_fonts}')
+print(f'⚠️ 交付时告知用户：本 deck 依赖 {", ".join(sorted(ea_fonts))}，收件人需安装')
+# 注意：不要用 WenQuanYi / 其他 Linux 发行版字体作投递字体 ——
+#       开发机有但 Windows/macOS 收件人没有，等于未绑定。
 
 # 占位符扫描
 blob = b''.join(z.read(n) for n in slides)
@@ -364,25 +382,77 @@ for c in charts:
 - 非逐字稿，而是要点提示
 - 示例：标题"市场增长在修复，但价值正向结构性优势赛道转移" → 备注"2025年行业增长12%，主要集中在中高端赛道。建议关注赛道A和B，放弃低毛利赛道C。具体数据见XX报告。"
 
-#### 步骤 3.4 — QA 检查清单（v1.1 更新）
+#### 步骤 3.4 — QA 检查清单（v2.0：**机械项 / 视觉项 分离**）
+
+> **原则：机械项绝不靠"看图"判断** —— 用渲染图去确认一个 lint 能秒判的问题，
+> 是纯浪费。先跑机械检查，只剩视觉项才渲图。
+
+**A. 机械项（zipfile / 脚本，秒级，必跑）**
 
 ```
-□ 所有页面都存在
-□ 标题匹配已确认故事线
-□ 数字匹配证据表
-□ 主要文字可编辑（鼠标能选中修改）
-□ 简单图表已原生重建（不是图片）
-□ 视觉风格一致（没漂移）
-□ 无占位文案残留（Lorem ipsum / xxxx / 单击此处添加）
-□ 每页有 SO WHAT / 含义块
-□ 文字没溢出容器（卡片、表格、结论条）
-□ 字体层级符合 C0/T1-T14
-□ 标签没压住图标/节点/曲线
-□ 无整页蓝图截图当背景
-□ 柱状图 barDir 正确（"col" 非 "bar"）
-□ 中文字体已绑定（WenQuanYi Micro Hei 防方框）
-□ 无语言元数据残留在页面
+□ 所有页面都存在（slide 数量 == 预期）
+□ 无占位文案残留（Lorem ipsum / xxxx / 单击此处添加 / TODO）
+□ 柱状图 barDir 正确（"col" 非 "bar"，否则空白页）—— 见 chart-type-anatomy.md
+□ 图表有数据点（<c:pt> 非空）
+□ 中文字体：<a:ea> 槽位已绑定（**不是**只查 typeface 出现过）—— 见 merge-and-qa.md
+□ 无语言元数据残留（lang="en-US" 于中文 run 上）
+□ 字体层级符合 C0/T1-T14（字号值在白名单内）
+□ 主要文字可编辑（不存在整页 base64 大图）
+□ **页面数字全部可溯源**（跑 `trace-claims.py`，见下）
+□ **图片来源与授权完整**（跑 `collect-credits.py`，见下）
 ```
+
+**A1. 数字溯源校验（v2.0 新增，把"不编造数据"变成可计算）**
+
+```bash
+# 先把证据表存成机器可读 JSON，再对 deck 溯源
+python3 scripts/trace-claims.py --deck output.pptx --evidence evidence.json
+```
+输出 `UNTRACED: slide7 "42%"` = 该数字在证据表里查不到。
+**处理要求（二选一，不可忽略）**：补进证据表（附来源）或从页面删除。
+退出码 1 表示存在未溯源数字，可作交付门禁。
+
+**A2. 图片来源与授权校验（v2.0 新增）**
+
+```bash
+# 扫描 manifest，列出缺失授权字段的图片，或直接生成「图片来源」页
+python3 scripts/collect-credits.py --manifest slide_manifest.json
+python3 scripts/collect-credits.py --manifest slide_manifest.json --format markdown
+```
+图库图（Pexels/Unsplash/Pixabay）需 `source_url`，多数需 `credit_text`（署名）；
+AI 生图需 `generated_by`。**客户/商业交付前必须补齐**。
+
+**B. 视觉项（必须渲染成图看，或交给盲读子 agent）**
+
+```
+□ 文字没溢出容器 / 没被裁切  ← 最高频缺陷，优先查
+□ 标题匹配已确认故事线（读起来是不是一个结论句）
+□ 标签没压住图标/节点/曲线
+□ 视觉风格一致（没漂移）
+□ 每页有 SO WHAT / 含义块（且区域明显）
+□ 留白均衡（不空不挤）
+□ 图片质量与风格统一
+```
+
+**C. 内容项（人工/模型核对）**
+
+```
+□ 数字匹配证据表（有证据表中不存在的数字 = 违规）
+□ 标题是结论句而非主题词
+□ 演讲者备注已生成且 ≤100 字
+```
+
+**QA 深度（按成本选，默认 standard）**
+
+| 档位 | 做什么 | 成本 |
+|------|--------|------|
+| `fast` | 仅机械项 + 抽 3 页渲染 | 低 |
+| `standard`（默认）| 机械项 + 全页渲染 + 逐页看视觉项 | 中 |
+| `thorough` | standard + 逐页用户确认门 | 高 |
+| `none` | 跳过 QA | — |
+
+> ⚠️ `none` **只能由主人明确要求**，不可自行推断、不可因"赶时间"自动降级。
+> 无论砍哪一档，**砍的是成本，不是范围** —— 机械项永远要跑。
 
 #### 步骤 3.5 — 最终合并
 
@@ -397,6 +467,8 @@ for c in charts:
 | 绝对禁止 | 原因 |
 |----------|------|
 | 编造数据/市场规模/调研结果 | 违反咨询基本诚信 |
+| **页面上出现证据表中查不到的数字** | 等价于编造；用 `trace-claims.py` 机械校验 |
+| **图片来源/授权信息缺失就交付** | 客户场景有合规风险；用 `collect-credits.py` 校验 |
 | 用整页截图当PPT背景 | 不可编辑 |
 | 把文字烘焙进图片 | 不可编辑 |
 | 为可编辑把复杂图表简化成默认图形 | 视觉降级 |
@@ -433,25 +505,46 @@ GLOBAL_MIN_FONT_PT = 6.5
 9. **单脚本优先** — 含 chart 时强制单 pptxgenjs 实例
 10. **私人材料不反哺** — 只沉淀方法论，不携带业务数据
 
-## 📚 项目文件索引
+## 📚 项目文件索引（含**何时读**）
+
+> ⚠️ 不要一次读完所有文件。按"何时读"列，在对应阶段才加载，避免上下文浪费。
+
+### 必读（按阶段）
+
+| 路径 | 说明 | **何时读** |
+|------|------|-----------|
+| `SKILL.md` | 本技能文件（流程主干） | 全程 |
+| `references/palettes.md` | **16+1 种配色代码** | **Phase 2 步骤 2.2 选风格时必读** |
+| `references/typography-scale.md` | C0/T1-T14 字体层级 | Phase 2 步骤 2.3 |
+| `references/layouts/layout-library.md` | 12 种布局模板库 | Phase 2 步骤 2.4 选布局时 |
+| `references/chart-type-anatomy.md` | **pptxgenjs chart 坑 + barDir** | **Phase 3 生成任何含图表的页之前必读** |
+| `references/merge-and-qa.md` | **多 batch 合并 + 中文字体双槽位 QA** | **含中文的 deck 交付前必读**；页数 >15 需合并时 |
+
+### 按需读
+
+| 路径 | 说明 | **何时读** |
+|------|------|-----------|
+| `references/design-principles.md` | 10 条设计原则 | Phase 2 结束前复核一遍 |
+| `references/prompt-templates.md` | 各阶段 system prompt 模板 | 需要固定流程话术时 |
+| `references/multi-model-guide.md` | 多模型选择指南 | 想按阶段换模型省钱时 |
+| `competitive-analysis.md` | 竞品深度对比 | 了解差异化定位时（非执行必需） |
+
+### 脚本
+
+| 路径 | 用途 | 何时用 |
+|------|------|--------|
+| `scripts/research-topic.py` | Deep Research 多引擎搜索 | Phase 0（材料不全时） |
+| `scripts/learn-from-pptx.py` | 从参考 PPTX 提取风格 | Phase 2 步骤 2.0（有参考文件时） |
+| `scripts/generate-image.js` | AI 生图（Agnes API） | Phase 3 需要 AI 配图时 |
+| `scripts/search-image.py` | 图库搜索（Pexels/Unsplash/Pixabay） | Phase 3 需要照片素材时 |
+| `scripts/extract-palette.py` | 从图片/Logo 提取配色 | Phase 2（有品牌色参考时） |
+| **`scripts/trace-claims.py`** | **🆕 数字溯源校验（防编造）** | **Phase 3 QA 机械项必跑** |
+| **`scripts/collect-credits.py`** | **🆕 图片来源与授权登记** | **交付前必跑（客户/商业场景）** |
+| `scripts/generate-sample.js` | 示例 PPT 生成脚本 | 环境验证 / 学习代码结构 |
+
+### 资源
 
 | 路径 | 说明 |
 |------|------|
-| `SKILL.md` | 本技能文件 |
-| `scripts/learn-from-pptx.py` | 从参考 PPTX 学习模板风格 |
-| `scripts/research-topic.py` | Deep Research 多引擎搜索 |
-| `scripts/search-image.py` | 多来源 PPT 图片搜索 |
-| `scripts/generate-image.js` | AI 生图（Agnes API） |
-| `scripts/extract-palette.py` | 从图片提取配色 |
-| `scripts/generate-sample.js` | 示例 PPT 生成脚本 |
-| `references/layouts/layout-library.md` | 12 种布局模板库 |
-| `references/palettes.md` | 🆕 **16+1 种配色代码（v2.0 扩至 16 种）** |
-| `references/design-principles.md` | 🆕 **10 条设计原则** |
-| `references/prompt-templates.md` | 各阶段 system prompt 模板 |
-| `references/multi-model-guide.md` | 多模型选择指南 |
-| `references/chart-type-anatomy.md` | pptxgenjs chart 坑分析 |
-| `references/merge-and-qa.md` | 多 batch 合并 + 中文 QA |
-| `references/typography-scale.md` | C0/T1-T14 字体层级 |
-| `assets/palette-samples/` | 风格样张 |
-| `examples/duduppt-sample.pptx` | 示例输出 |
-| `competitive-analysis.md` | 竞品深度对比分析 |
+| `assets/palette-samples/` | 16 种风格样张（PNG） |
+| `examples/duduppt-sample.pptx` | 示例输出（可直接打开看效果） |
