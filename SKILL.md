@@ -422,6 +422,24 @@ python3 scripts/collect-credits.py --manifest slide_manifest.json --format markd
 图库图（Pexels/Unsplash/Pixabay）需 `source_url`，多数需 `credit_text`（署名）；
 AI 生图需 `generated_by`。**客户/商业交付前必须补齐**。
 
+**A3. 一键机械检查（v2.0 新增，建议先跑这个）**
+
+```bash
+python3 scripts/qa-check.py --deck output.pptx
+```
+覆盖：结构完整性 / 占位符 / chart barDir / 中文字体槽位 / 字号下限 / 整页大图。
+零依赖、秒级，**是渲染看图之前的第一道关**。
+
+**A4. 中文字体槽位修复（v2.0 新增，含中文时必跑）**
+
+```bash
+python3 scripts/fix-cjk-font.py --deck output.pptx            # 修正 <a:ea> 槽位
+python3 scripts/fix-cjk-font.py --deck output.pptx --dry-run  # 先看会改多少
+```
+**背景**：pptxgenjs 的 `fontFace` 会把 `<a:latin>` 和 `<a:ea>` 写成同一个值，
+所以 `fontFace: 'Arial'` 时中文槽位也是 Arial —— **Arial 没有中文字形**，
+中文会静默回退。本脚本把 `<a:ea>` 改成真正的中文字体（默认「微软雅黑」）。
+
 **B. 视觉项（必须渲染成图看，或交给盲读子 agent）**
 
 ```
@@ -433,6 +451,37 @@ AI 生图需 `generated_by`。**客户/商业交付前必须补齐**。
 □ 留白均衡（不空不挤）
 □ 图片质量与风格统一
 ```
+
+**B1. 盲读 QA（v2.0 新增，最强的视觉验证方式）**
+
+**为什么"盲"**：看过设计意图的人会在图里"看到"他想看到的东西 —— 即使页面根本没表达出来。
+只有**不知情的读者**才能暴露"结论没讲出来 / 页面重复 / 元素看不清"。
+
+```bash
+# 1) 渲染所有页为图片
+soffice --headless --convert-to pdf deck.pptx
+pdftoppm -jpeg -r 150 deck.pdf slide
+
+# 2) 开一个【新会话/子 agent】，把 references/blind-read-prompt.md 的 prompt
+#    连同所有 slide-*.jpg 一起交给它（关键：不要带 deck 的设计上下文）
+#    它会输出一份 JSON，存为 blind_read.json
+
+# 3) 机器比对盲读结果与 manifest
+python3 scripts/qa-compare.py --blind blind_read.json --manifest slide_manifest.json
+```
+
+**比对会暴露什么**：
+
+| 发现 | 含义 | 处理 |
+|------|------|------|
+| `claim` 对不上预期 | 这一页的结论**没传达给读者** | 改标题/内容 |
+| 多页 `about` 相同 | **页面冗余** | 合并或删页 |
+| `unreadable` 非空 | 有元素**看不清** | 放大字号/提对比度 |
+| `problems` 非空 | 排版问题 | 修版面 |
+| `any_blank` / `style_consistent=false` | 结构性缺陷 | 必改 |
+
+> ⚠️ **每条差异都必须书面响应**（改了什么 / 为何是误报），不允许"看到了但忽略"。
+> 完整 prompt 与设计理由见 `references/blind-read-prompt.md`。
 
 **C. 内容项（人工/模型核对）**
 
@@ -446,13 +495,24 @@ AI 生图需 `generated_by`。**客户/商业交付前必须补齐**。
 
 | 档位 | 做什么 | 成本 |
 |------|--------|------|
-| `fast` | 仅机械项 + 抽 3 页渲染 | 低 |
-| `standard`（默认）| 机械项 + 全页渲染 + 逐页看视觉项 | 中 |
+| `fast` | 仅机械项（`qa-check.py` + `trace-claims.py`）+ 抽 3 页渲染 | 低 |
+| `standard`（默认）| 机械项 + 全页渲染 + 视觉项 + **盲读 QA** | 中 |
 | `thorough` | standard + 逐页用户确认门 | 高 |
 | `none` | 跳过 QA | — |
 
 > ⚠️ `none` **只能由主人明确要求**，不可自行推断、不可因"赶时间"自动降级。
 > 无论砍哪一档，**砍的是成本，不是范围** —— 机械项永远要跑。
+
+#### 步骤 3.5 — 导出（可选副产品）
+
+主交付物永远是**原生 PPTX**。以下为可选副产品：
+
+```bash
+# HTML 预览（LibreOffice 可用时保真度较高，否则退化为文本预览）
+python3 scripts/export-html.py --deck output.pptx
+```
+
+> PDF 导出直接用 LibreOffice：`soffice --headless --convert-to pdf output.pptx`
 
 #### 步骤 3.5 — 最终合并
 
@@ -538,9 +598,21 @@ GLOBAL_MIN_FONT_PT = 6.5
 | `scripts/generate-image.js` | AI 生图（Agnes API） | Phase 3 需要 AI 配图时 |
 | `scripts/search-image.py` | 图库搜索（Pexels/Unsplash/Pixabay） | Phase 3 需要照片素材时 |
 | `scripts/extract-palette.py` | 从图片/Logo 提取配色 | Phase 2（有品牌色参考时） |
-| **`scripts/trace-claims.py`** | **🆕 数字溯源校验（防编造）** | **Phase 3 QA 机械项必跑** |
-| **`scripts/collect-credits.py`** | **🆕 图片来源与授权登记** | **交付前必跑（客户/商业场景）** |
-| `scripts/generate-sample.js` | 示例 PPT 生成脚本 | 环境验证 / 学习代码结构 |
+| **`scripts/qa-check.py`** | **机械检查（结构/chart/字体/字号，零依赖秒级）** | **Phase 3 QA 机械项必跑** |
+| **`scripts/fix-cjk-font.py`** | **修正中文字体东亚槽位 `<a:ea>`** | **含中文的 deck 生成后必跑** |
+| **`scripts/trace-claims.py`** | **数字溯源校验（防编造）** | **Phase 3 QA 机械项必跑** |
+| **`scripts/collect-credits.py`** | **图片来源与授权登记** | **交付前必跑（客户/商业场景）** |
+| **`scripts/qa-compare.py`** | **盲读结果与 manifest 机器比对** | Phase 3 盲读 QA 后 |
+| **`scripts/export-html.py`** | **导出 HTML 预览（可选，副产品）** | 需要网页预览/分享时 |
+| `scripts/generate-sample.js` | 示例 PPT 生成脚本（生成后自动修字体） | 环境验证 / 学习代码结构 |
+
+### 文档
+
+| 路径 | 说明 |
+|------|------|
+| `docs/QUICKSTART.md` | 快速开始（安装 + 首次使用 + 常见问题） |
+| `docs/SUBMISSION.md` | 提交到 Skill 目录的现成文案 |
+| `CHANGELOG.md` | 版本演进记录 |
 
 ### 资源
 
