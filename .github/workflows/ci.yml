@@ -50,10 +50,12 @@ jobs:
         run: |
           set -e
           fail=0
-          for f in README.md SKILL.md CHANGELOG.md COMMUNITY.md \
+          for f in README.md SKILL.md CHANGELOG.md COMMUNITY.md LICENSE \
+                   docs/QUICKSTART.md docs/SUBMISSION.md \
                    references/design-principles.md references/palettes.md \
                    references/typography-scale.md references/chart-type-anatomy.md \
-                   references/merge-and-qa.md; do
+                   references/merge-and-qa.md references/blind-read-prompt.md \
+                   references/prompt-templates.md references/multi-model-guide.md; do
             if [ ! -s "$f" ]; then
               echo "MISSING or EMPTY: $f"
               fail=1
