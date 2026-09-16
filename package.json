@@ -1,6 +1,6 @@
 {
   "name": "duduppt",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Consulting-grade PPTX generator skill: four-phase methodology (research -> analysis -> visual blueprint -> PPTX + QA), 16+1 visual styles, evidence-table driven, native editable PPTX output.",
   "private": true,
   "type": "commonjs",
