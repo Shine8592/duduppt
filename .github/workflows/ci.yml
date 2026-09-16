@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.11", "3.12"]
+
+    env:
+      # 显式 UTF-8：技能本体与测试含大量中文，避免非 UTF-8 locale 下报错
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: utf-8
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run structure self-check
+        run: python tests/test_structure.py
+
+  markdown:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check markdown files exist and are non-empty
+        run: |
+          set -e
+          fail=0
+          for f in README.md SKILL.md CHANGELOG.md COMMUNITY.md \
+                   references/design-principles.md references/palettes.md \
+                   references/typography-scale.md references/chart-type-anatomy.md \
+                   references/merge-and-qa.md; do
+            if [ ! -s "$f" ]; then
+              echo "MISSING or EMPTY: $f"
+              fail=1
+            else
+              echo "OK $f ($(wc -c < "$f") bytes)"
+            fi
+          done
+          exit $fail
+
+  verify-references:
+    name: Verify SKILL.md references
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: All referenced paths must exist
+        run: |
+          python - <<'PY'
+          import re, sys
+          from pathlib import Path
+          root = Path(".")
+          text = (root / "SKILL.md").read_text(encoding="utf-8")
+          refs = set(re.findall(r"`((?:scripts|references|assets|examples)/[^`\s]+)`", text))
+          missing = [r for r in sorted(refs) if not (root / r).exists()]
+          print(f"checked {len(refs)} references")
+          if missing:
+              print("MISSING:", missing)
+              sys.exit(1)
+          print("all references exist")
+          PY
