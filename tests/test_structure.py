@@ -191,13 +191,53 @@ def test_cjk_font_logic() -> None:
     check("纯英文不误报", not d["problems"], str(d["problems"]))
 
 
+
+
+# ---------------------------------------------------------------------------
+# 7. QA 脚本冒烟测试（对示例文件跑，确保脚本本身可用）
+# ---------------------------------------------------------------------------
+def test_qa_scripts_smoke() -> None:
+    """对 examples/duduppt-sample.pptx 跑 qa-check.py，确认脚本可执行且结论合理。"""
+    sample = ROOT / "examples" / "duduppt-sample.pptx"
+    if not sample.exists():
+        print("[SKIP] 无示例 pptx，跳过 QA 脚本冒烟")
+        return
+    r = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "qa-check.py"), "--deck", str(sample)],
+        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
+    )
+    out = r.stdout or ""
+    check("qa-check.py 可执行", r.returncode in (0, 1), f"exit={r.returncode}")
+    check("qa-check.py 能识别 slide 数量", "slide" in out,
+          out.split(chr(10))[2][:60] if len(out.split(chr(10))) > 2 else "")
+
+
+# ---------------------------------------------------------------------------
+# 8. 关键文档存在
+# ---------------------------------------------------------------------------
+def test_docs_exist() -> None:
+    required = [
+        "README.md", "SKILL.md", "LICENSE", "CHANGELOG.md",
+        "docs/QUICKSTART.md", "docs/SUBMISSION.md",
+        "references/chart-type-anatomy.md", "references/merge-and-qa.md",
+        "references/blind-read-prompt.md",
+        "scripts/qa-check.py", "scripts/trace-claims.py", "scripts/collect-credits.py",
+        "scripts/qa-compare.py", "scripts/fix-cjk-font.py", "scripts/export-html.py",
+        ".github/workflows/ci.yml", "tests/test_structure.py",
+    ]
+    missing = [f for f in required if not (ROOT / f).exists()]
+    check("关键文档与脚本齐全", not missing,
+          f"缺失 {missing}" if missing else f"检查 {len(required)} 项")
+
+
 # ---------------------------------------------------------------------------
 def main() -> int:
     print("=" * 60)
     print(" duduppt 结构自检")
     print("=" * 60)
     for fn in (test_skill_frontmatter, test_referenced_files_exist, test_package_json,
-               test_python_scripts_compile, test_js_scripts_syntax, test_cjk_font_logic):
+               test_python_scripts_compile, test_js_scripts_syntax, test_cjk_font_logic,
+               test_qa_scripts_smoke, test_docs_exist):
         print(f"\n--- {fn.__name__} ---")
         fn()
     print("\n" + "=" * 60)
