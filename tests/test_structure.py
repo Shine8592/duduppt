@@ -220,7 +220,7 @@ def test_qa_scripts_smoke() -> None:
 def test_docs_exist() -> None:
     required = [
         "README.md", "skills/duduppt/SKILL.md", "LICENSE", "CHANGELOG.md",
-        "docs/QUICKSTART.md", "docs/SUBMISSION.md",
+        "skills/duduppt/docs/QUICKSTART.md", "skills/duduppt/docs/SUBMISSION.md",
         "skills/duduppt/references/chart-type-anatomy.md",
         "skills/duduppt/references/merge-and-qa.md",
         "skills/duduppt/references/blind-read-prompt.md",

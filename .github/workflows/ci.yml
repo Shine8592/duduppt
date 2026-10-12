@@ -65,7 +65,7 @@ jobs:
           set -e
           fail=0
           for f in README.md skills/duduppt/SKILL.md CHANGELOG.md COMMUNITY.md LICENSE \
-                   docs/QUICKSTART.md docs/SUBMISSION.md \
+                   skills/duduppt/docs/QUICKSTART.md skills/duduppt/docs/SUBMISSION.md \
                    skills/duduppt/references/design-principles.md skills/duduppt/references/palettes.md \
                    skills/duduppt/references/typography-scale.md skills/duduppt/references/chart-type-anatomy.md \
                    skills/duduppt/references/merge-and-qa.md skills/duduppt/references/blind-read-prompt.md \
