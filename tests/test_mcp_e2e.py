@@ -37,6 +37,14 @@ def main() -> int:
     print(" duduppt MCP 端到端烟雾测试")
     print("=" * 60)
 
+    # mcp 是可选依赖：CI 环境未必安装，缺则优雅跳过（不失败）
+    try:
+        import mcp  # noqa: F401
+    except ImportError:
+        print("\n[SKIP] 未安装 mcp 包，跳过 MCP 端到端测试")
+        print("       本地如需测试：pip install 'mcp>=2.0.0'")
+        return 0
+
     env = dict(os.environ)
     env["PYTHONUTF8"] = "1"
     proc = subprocess.Popen(

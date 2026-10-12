@@ -55,6 +55,11 @@ jobs:
       - name: Run structure self-check
         run: python tests/test_structure.py
 
+      # mcp 是可选依赖，装上才能真实跑 MCP 端到端
+      # （测试内部也会检测：没装则优雅跳过而非失败）
+      - name: Install optional MCP dependency
+        run: python -m pip install "mcp>=2.0.0"
+
       - name: Run MCP server smoke test
         run: python tests/test_mcp_e2e.py
 
