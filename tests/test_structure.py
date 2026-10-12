@@ -228,6 +228,14 @@ def test_docs_exist() -> None:
         "skills/duduppt/scripts/collect-credits.py",
         "skills/duduppt/scripts/qa-compare.py", "skills/duduppt/scripts/fix-cjk-font.py",
         "skills/duduppt/scripts/export-html.py",
+        # v3 新增
+        "skills/duduppt/scripts/qa-report.py",
+        "skills/duduppt/scripts/native-charts.py",
+        "skills/duduppt/scripts/edit-deck.py",
+        "skills/duduppt/scripts/snapshot.py",
+        "skills/duduppt/scripts/canvas-formats.py",
+        "skills/duduppt/scripts/omml-formula.py",
+        "skills/duduppt/scripts/mcp_server.py",
         ".github/workflows/ci.yml", "tests/test_structure.py",
     ]
     missing = [f for f in required if not (ROOT / f).exists()]

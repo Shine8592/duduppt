@@ -606,6 +606,22 @@ GLOBAL_MIN_FONT_PT = 6.5
 | **`scripts/export-html.py`** | **导出 HTML 预览（可选，副产品）** | 需要网页预览/分享时 |
 | `scripts/generate-sample.js` | 示例 PPT 生成脚本（生成后自动修字体） | 环境验证 / 学习代码结构 |
 
+#### v3 新增（升级建议落地）
+
+| 路径 | 用途 | 何时用 |
+|------|------|--------|
+| **`scripts/qa-report.py`** | **生成《质量审计报告》（JSON+Markdown）** | **交付时必跑**——把证据链 QA 变成可见交付物 |
+| **`scripts/native-charts.py`** | **原生图表（带"编辑数据"的真 Chart 对象）** | 需要图表且要求可改数据时 |
+| `scripts/edit-deck.py` | 编辑既有 PPTX（改字/改图表数据/增删页） | **改一个字不想重做整份时** |
+| `scripts/snapshot.py` | 版本快照（归档/列表/回滚/对比） | 每次反馈迭代后归档 |
+| `scripts/canvas-formats.py` | 画幅定义与换算（9 种，含小红书/公众号） | 出多尺寸投放版本时 |
+| `scripts/omml-formula.py` | 写入 OMML 原生公式（可双击编辑） | 学术/技术/金融建模含公式时 |
+| `scripts/mcp_server.py` | MCP 服务（8 个工具，QA 能力平台化） | 让别的 Agent 复用 duduppt QA 时 |
+
+> `qa-check.py` 已扩展到 **11 项**（新增：文本溢出 / 元素遮挡 / 对比度）。
+> `native-charts.py` `edit-deck.py` `omml-formula.py` 依赖 `python-pptx`
+> （`pip install python-pptx`）；`qa-check.py` 与 `qa-report.py` **零依赖**。
+
 ### 文档
 
 | 路径 | 说明 |
