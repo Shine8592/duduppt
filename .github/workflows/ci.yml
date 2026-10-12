@@ -63,6 +63,12 @@ jobs:
       - name: Run MCP server smoke test
         run: python tests/test_mcp_e2e.py
 
+      - name: Install optional python-pptx
+        run: python -m pip install python-pptx
+
+      - name: Run master/retemplate self-check
+        run: python tests/test_master.py
+
   markdown:
     name: Markdown lint
     runs-on: ubuntu-latest
