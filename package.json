@@ -1,13 +1,13 @@
 {
   "name": "duduppt",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Consulting-grade PPTX generator skill: four-phase methodology (research -> analysis -> visual blueprint -> PPTX + QA), 16+1 visual styles, evidence-table driven, native editable PPTX output.",
   "private": true,
   "type": "commonjs",
-  "main": "scripts/generate-sample.js",
+  "main": "skills/duduppt/scripts/generate-sample.js",
   "scripts": {
-    "test": "node scripts/generate-sample.js --dry-run",
-    "sample": "node scripts/generate-sample.js"
+    "test": "node skills/duduppt/scripts/generate-sample.js --dry-run",
+    "sample": "node skills/duduppt/scripts/generate-sample.js"
   },
   "repository": {
     "type": "git",

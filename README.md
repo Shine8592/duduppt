@@ -93,12 +93,25 @@ export NODE_PATH=$(npm root -g)
 
 ### 安装技能
 
-```bash
-# 克隆到 Hermes skills 目录
-git clone https://github.com/Shine8592/duduppt.git ~/.hermes/skills/creative/duduppt
+**方式一：一键安装（推荐，任何 Agent 通用）**
 
-# 或复制 SKILL.md
-cp duduppt/SKILL.md ~/.hermes/skills/creative/duduppt/
+```bash
+# 跨 Agent CLI（Claude Code / Codex / Cursor / OpenCode 等）
+npx skills add Shine8592/duduppt
+
+# Claude Code 插件市场
+/plugin marketplace add Shine8592/duduppt
+/plugin install duduppt@duduppt
+```
+
+安装后 Skill 位于 `skills/duduppt/`，Agent 会自动识别。
+
+**方式二：手动克隆**
+
+```bash
+# 克隆到任意 Agent 的 skills 目录
+git clone https://github.com/Shine8592/duduppt.git
+cp -r duduppt/skills/duduppt ~/.hermes/skills/creative/
 ```
 
 ### 使用
@@ -165,7 +178,7 @@ duduppt 会自动进入四阶段流程。
 | 15 | 自然草木风 | `#F5F7F2` | `#4A7C59` | ESG、环保、农业 |
 | 16 | 经典商务蓝 | `#F6F8FA` | `#1B5E8A` | 保险、银行、传统企业 |
 
-> 完整色板代码见 [`references/palettes.md`](references/palettes.md)
+> 完整色板代码见 [`skills/duduppt/references/palettes.md`](skills/duduppt/references/palettes.md)
 
 ---
 
@@ -197,12 +210,12 @@ duduppt 会自动进入四阶段流程。
 
 | 脚本 | 用途 | 依赖 |
 |------|------|------|
-| [`scripts/research-topic.py`](scripts/research-topic.py) | Deep Research 多引擎搜索（Tavily+Exa+Querit+SerpAPI） | API keys |
-| [`scripts/learn-from-pptx.py`](scripts/learn-from-pptx.py) | 从参考 PPTX 学习配色/字体/布局 | Pillow |
-| [`scripts/extract-palette.py`](scripts/extract-palette.py) | 从图片提取配色，生成 PPT style config | Pillow |
-| [`scripts/generate-image.js`](scripts/generate-image.js) | AI 生图（Agnes API），适配 16:9/4:3/1:1 | Agnes API key |
-| [`scripts/search-image.py`](scripts/search-image.py) | 多来源免费图库搜索（Pexels/Unsplash/Pixabay） | API keys（可选） |
-| [`scripts/generate-sample.js`](scripts/generate-sample.js) | 示例 PPT 生成脚本 | pptxgenjs |
+| [`skills/duduppt/scripts/research-topic.py`](skills/duduppt/scripts/research-topic.py) | Deep Research 多引擎搜索（Tavily+Exa+Querit+SerpAPI） | API keys |
+| [`skills/duduppt/scripts/learn-from-pptx.py`](skills/duduppt/scripts/learn-from-pptx.py) | 从参考 PPTX 学习配色/字体/布局 | Pillow |
+| [`skills/duduppt/scripts/extract-palette.py`](skills/duduppt/scripts/extract-palette.py) | 从图片提取配色，生成 PPT style config | Pillow |
+| [`skills/duduppt/scripts/generate-image.js`](skills/duduppt/scripts/generate-image.js) | AI 生图（Agnes API），适配 16:9/4:3/1:1 | Agnes API key |
+| [`skills/duduppt/scripts/search-image.py`](skills/duduppt/scripts/search-image.py) | 多来源免费图库搜索（Pexels/Unsplash/Pixabay） | API keys（可选） |
+| [`skills/duduppt/scripts/generate-sample.js`](skills/duduppt/scripts/generate-sample.js) | 示例 PPT 生成脚本 | pptxgenjs |
 
 ---
 
@@ -210,15 +223,15 @@ duduppt 会自动进入四阶段流程。
 
 | 文件 | 说明 |
 |------|------|
-| [`references/palettes.md`](references/palettes.md) | 16+1 种配色完整代码（YAML + CSS + JS 格式） |
-| [`references/design-principles.md`](references/design-principles.md) | 10 条设计原则：PPTX 优先、结论先行、克制优于炫技 |
-| [`references/layouts/layout-library.md`](references/layouts/layout-library.md) | 12 种布局模板 + pptxgenjs 代码骨架 |
-| [`references/prompt-templates.md`](references/prompt-templates.md) | 各阶段 system prompt 模板 |
-| [`references/multi-model-guide.md`](references/multi-model-guide.md) | 多模型选择指南：省钱方案 vs 顶配方案 |
-| [`references/chart-type-anatomy.md`](references/chart-type-anatomy.md) | pptxgenjs chart 坑分析（barDir 修复） |
-| [`references/merge-and-qa.md`](references/merge-and-qa.md) | 多 batch 合并脚本 + 中文 QA 兜底 |
-| [`references/typography-scale.md`](references/typography-scale.md) | C0/T1-T14 字体层级详解 |
-| [`assets/palette-samples/`](assets/palette-samples/) | 8 张风格样张 PNG |
+| [`skills/duduppt/references/palettes.md`](skills/duduppt/references/palettes.md) | 16+1 种配色完整代码（YAML + CSS + JS 格式） |
+| [`skills/duduppt/references/design-principles.md`](skills/duduppt/references/design-principles.md) | 10 条设计原则：PPTX 优先、结论先行、克制优于炫技 |
+| [`skills/duduppt/references/layouts/layout-library.md`](skills/duduppt/references/layouts/layout-library.md) | 12 种布局模板 + pptxgenjs 代码骨架 |
+| [`skills/duduppt/references/prompt-templates.md`](skills/duduppt/references/prompt-templates.md) | 各阶段 system prompt 模板 |
+| [`skills/duduppt/references/multi-model-guide.md`](skills/duduppt/references/multi-model-guide.md) | 多模型选择指南：省钱方案 vs 顶配方案 |
+| [`skills/duduppt/references/chart-type-anatomy.md`](skills/duduppt/references/chart-type-anatomy.md) | pptxgenjs chart 坑分析（barDir 修复） |
+| [`skills/duduppt/references/merge-and-qa.md`](skills/duduppt/references/merge-and-qa.md) | 多 batch 合并脚本 + 中文 QA 兜底 |
+| [`skills/duduppt/references/typography-scale.md`](skills/duduppt/references/typography-scale.md) | C0/T1-T14 字体层级详解 |
+| [`skills/duduppt/assets/palette-samples/`](skills/duduppt/assets/palette-samples/) | 8 张风格样张 PNG |
 
 ---
 

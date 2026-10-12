@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "duduppt",
+  "owner": {
+    "name": "Shine8592",
+    "url": "https://github.com/Shine8592"
+  },
+  "metadata": {
+    "description": "duduppt skill — consulting-grade PPTX generator with evidence-chain QA (blind-read review, claim tracing, version diff)",
+    "version": "3.0.0"
+  },
+  "plugins": [
+    {
+      "name": "duduppt",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/Shine8592/duduppt.git",
+        "path": "skills"
+      },
+      "description": "Turn documents/data/ideas into consulting-style high-density PPTX. Four phases: deep research → evidence analysis → visual blueprint → PPTX generation + QA. Unique: blind-read review, claim tracing to evidence sources, and CJK font assertions. Works with any agent-capable tool (Claude Code, Codex, OpenCode).",
+      "author": {
+        "name": "Shine8592",
+        "url": "https://github.com/Shine8592"
+      },
+      "homepage": "https://github.com/Shine8592/duduppt",
+      "repository": "https://github.com/Shine8592/duduppt",
+      "license": "MIT",
+      "category": "productivity",
+      "keywords": [
+        "pptx",
+        "presentation",
+        "powerpoint",
+        "consulting",
+        "mcKinsey-style",
+        "agent-skill",
+        "qa",
+        "evidence-chain",
+        "chinese",
+        "cjk"
+      ]
+    }
+  ]
+}

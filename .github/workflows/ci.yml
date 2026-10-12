@@ -5,10 +5,8 @@ on:
     branches: [main]
     # 只在可能影响自检结果的文件变更时触发，减少无谓运行
     paths:
-      - "scripts/**"
+      - "skills/**"
       - "tests/**"
-      - "references/**"
-      - "SKILL.md"
       - "README.md"
       - "package.json"
       - ".github/workflows/**"
@@ -66,12 +64,12 @@ jobs:
         run: |
           set -e
           fail=0
-          for f in README.md SKILL.md CHANGELOG.md COMMUNITY.md LICENSE \
+          for f in README.md skills/duduppt/SKILL.md CHANGELOG.md COMMUNITY.md LICENSE \
                    docs/QUICKSTART.md docs/SUBMISSION.md \
-                   references/design-principles.md references/palettes.md \
-                   references/typography-scale.md references/chart-type-anatomy.md \
-                   references/merge-and-qa.md references/blind-read-prompt.md \
-                   references/prompt-templates.md references/multi-model-guide.md; do
+                   skills/duduppt/references/design-principles.md skills/duduppt/references/palettes.md \
+                   skills/duduppt/references/typography-scale.md skills/duduppt/references/chart-type-anatomy.md \
+                   skills/duduppt/references/merge-and-qa.md skills/duduppt/references/blind-read-prompt.md \
+                   skills/duduppt/references/prompt-templates.md skills/duduppt/references/multi-model-guide.md; do
             if [ ! -s "$f" ]; then
               echo "MISSING or EMPTY: $f"
               fail=1
@@ -94,10 +92,11 @@ jobs:
           python - <<'PY'
           import re, sys
           from pathlib import Path
-          root = Path(".")
-          text = (root / "SKILL.md").read_text(encoding="utf-8")
+          # SKILL.md 在 skills/duduppt/ 下；其内部引用的相对路径也以该目录为基准
+          skill_dir = Path("skills/duduppt")
+          text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
           refs = set(re.findall(r"`((?:scripts|references|assets|examples|docs)/[^`\s]+)`", text))
-          missing = [r for r in sorted(refs) if not (root / r).exists()]
+          missing = [r for r in sorted(refs) if not (skill_dir / r).exists()]
           print(f"checked {len(refs)} references")
           if missing:
               print("MISSING:", missing)

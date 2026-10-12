@@ -3,3 +3,15 @@ node_modules/
 __pycache__/
 *.pyc
 .env
+
+# 本地诊断工具（含 token，绝不入库）
+_ci.py
+scripts/diff_remote.py
+skills/duduppt/scripts/diff_remote.py
+skills/duduppt/scripts/verify_lineendings.py
+skills/duduppt/scripts/fix_readme_links.py
+
+# 临时产物
+tests/_tmp_*
+*.tmp
+tmp/

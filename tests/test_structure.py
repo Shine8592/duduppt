@@ -23,6 +23,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
+# v3 分发重构：Skill 本体移至 skills/duduppt/（兼容 npx skills add / 插件市场）
+SKILL_DIR = ROOT / "skills" / "duduppt"
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 FAILED: list[str] = []
@@ -39,7 +41,7 @@ def check(name: str, cond: bool, extra: str = "") -> None:
 # 1. SKILL.md frontmatter
 # ---------------------------------------------------------------------------
 def test_skill_frontmatter() -> None:
-    p = ROOT / "SKILL.md"
+    p = SKILL_DIR / "SKILL.md"
     if not p.exists():
         check("SKILL.md 存在", False)
         return
@@ -71,12 +73,12 @@ def test_skill_frontmatter() -> None:
 # ---------------------------------------------------------------------------
 def test_referenced_files_exist() -> None:
     """SKILL.md 中出现的 `scripts/xxx` `references/xxx` 路径必须真实存在。"""
-    text = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-    # 抓反引号里的相对路径
+    text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8")
+    # 抓反引号里的相对路径（以 SKILL 所在目录为基准）
     refs = set(re.findall(r"`((?:scripts|references|assets|examples)/[^`\s]+)`", text))
     missing = []
     for r in sorted(refs):
-        if not (ROOT / r).exists():
+        if not (SKILL_DIR / r).exists():
             missing.append(r)
     check("SKILL.md 引用的文件都存在", not missing,
           f"缺失 {missing}" if missing else f"检查 {len(refs)} 个引用")
@@ -111,7 +113,7 @@ def test_package_json() -> None:
 # ---------------------------------------------------------------------------
 def test_python_scripts_compile() -> None:
     import py_compile
-    scripts = sorted((ROOT / "scripts").glob("*.py"))
+    scripts = sorted((SKILL_DIR / "scripts").glob("*.py"))
     check("存在 Python 脚本", len(scripts) > 0, f"{len(scripts)} 个")
     bad = []
     for s in scripts:
@@ -126,7 +128,7 @@ def test_python_scripts_compile() -> None:
 # 5. JS 脚本语法（需 node）
 # ---------------------------------------------------------------------------
 def test_js_scripts_syntax() -> None:
-    scripts = sorted((ROOT / "scripts").glob("*.js"))
+    scripts = sorted((SKILL_DIR / "scripts").glob("*.js"))
     if not scripts:
         check("存在 JS 脚本", False)
         return
@@ -198,12 +200,12 @@ def test_cjk_font_logic() -> None:
 # ---------------------------------------------------------------------------
 def test_qa_scripts_smoke() -> None:
     """对 examples/duduppt-sample.pptx 跑 qa-check.py，确认脚本可执行且结论合理。"""
-    sample = ROOT / "examples" / "duduppt-sample.pptx"
+    sample = SKILL_DIR / "examples" / "duduppt-sample.pptx"
     if not sample.exists():
         print("[SKIP] 无示例 pptx，跳过 QA 脚本冒烟")
         return
     r = subprocess.run(
-        [sys.executable, str(ROOT / "scripts" / "qa-check.py"), "--deck", str(sample)],
+        [sys.executable, str(SKILL_DIR / "scripts" / "qa-check.py"), "--deck", str(sample)],
         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120,
     )
     out = r.stdout or ""
@@ -217,12 +219,15 @@ def test_qa_scripts_smoke() -> None:
 # ---------------------------------------------------------------------------
 def test_docs_exist() -> None:
     required = [
-        "README.md", "SKILL.md", "LICENSE", "CHANGELOG.md",
+        "README.md", "skills/duduppt/SKILL.md", "LICENSE", "CHANGELOG.md",
         "docs/QUICKSTART.md", "docs/SUBMISSION.md",
-        "references/chart-type-anatomy.md", "references/merge-and-qa.md",
-        "references/blind-read-prompt.md",
-        "scripts/qa-check.py", "scripts/trace-claims.py", "scripts/collect-credits.py",
-        "scripts/qa-compare.py", "scripts/fix-cjk-font.py", "scripts/export-html.py",
+        "skills/duduppt/references/chart-type-anatomy.md",
+        "skills/duduppt/references/merge-and-qa.md",
+        "skills/duduppt/references/blind-read-prompt.md",
+        "skills/duduppt/scripts/qa-check.py", "skills/duduppt/scripts/trace-claims.py",
+        "skills/duduppt/scripts/collect-credits.py",
+        "skills/duduppt/scripts/qa-compare.py", "skills/duduppt/scripts/fix-cjk-font.py",
+        "skills/duduppt/scripts/export-html.py",
         ".github/workflows/ci.yml", "tests/test_structure.py",
     ]
     missing = [f for f in required if not (ROOT / f).exists()]
