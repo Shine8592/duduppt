@@ -1,13 +1,18 @@
 ---
 name: duduppt
-description: "主人说'做个PPT'时用这个技能。把文档/数据/想法转成咨询风格高密度PPTX。三阶段：证据分析→视觉蓝图→PPTX生成+QA。GitHub: github.com/Shine8592/duduppt。"
+description: "主人说'做个PPT'时用这个技能。把文档/数据/想法转成咨询风格高密度PPTX。四阶段：Deep Research→证据分析→视觉蓝图→PPTX生成+QA。独有证据链审计：盲读验收、断言溯源、质量审计报告。GitHub: github.com/Shine8592/duduppt。"
+metadata:
+  version: "3.2.0"
+  license: "MIT"
+  official_repository: "https://github.com/Shine8592/duduppt"
 ---
 
 # 🎯 duduppt — 嘟嘟的咨询风PPT流水线
 
 > 来源：[CyberPPT](https://github.com/crazyykhllc-bit/CyberPPT) 三阶段方法论
 > GitHub 项目：[duduppt](https://github.com/Shine8592/duduppt)
-> 升级 v2.0：16+1 风格库 + 设计访谈 + 配图管理 + 演讲者备注
+> **v3.2.0**：证据链审计（盲读/溯源/质量报告）+ 原生图表 + 编辑既有PPTX
+> + 可编辑预览 + 16 种风格母版模板 + 全篇换风格 + MCP 13 工具
 
 ## 触发条件
 
