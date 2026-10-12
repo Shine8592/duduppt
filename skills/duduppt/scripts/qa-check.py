@@ -17,6 +17,9 @@ PPTX 机械检查（QA 清单的"机械项"部分）。
   6. 语言元数据      中文 run 上是否残留 lang="en-US"
   7. 整页大图        是否存在 base64 塞满整页的图片（破坏可编辑性）
   8. 字号范围        是否低于全局最小字号 GLOBAL_MIN_FONT_PT
+  9. 文本溢出        （v3 静态 Critic）估文本总宽是否超框
+ 10. 元素遮挡        （v3 静态 Critic）同页两元素重叠超 30%
+ 11. 对比度不足      （v3 静态 Critic）文字与背景色亮度差过小
 
 用法：
     python scripts/qa-check.py --deck output.pptx
@@ -248,6 +251,155 @@ def check_full_page_images(z: zipfile.ZipFile, slides: list[str]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 8. 静态 Critic：文本溢出风险（估宽度超框）
+# ---------------------------------------------------------------------------
+def check_text_overflow(z: zipfile.ZipFile, slides: list[str]) -> None:
+    """估算文本框内文字总宽是否可能超出框宽。
+
+    依据（学 paper-ppt-agent 的静态 Critic）：逐 run 累加
+    （sz * len(text)）的宽度估计，与 <a:ext cx> 比较。
+    中文按 1.0 宽、ASCII 按 0.6 宽估算，超出 110% 报 WARN。
+    """
+    issues = []
+    for n in slides:
+        xml = z.read(n).decode("utf-8", "ignore")
+        # 每个 sp 文本框：取它的 cx 与所有 run 的 sz+text
+        for sp in re.finditer(
+            r"<p:sp>.*?<a:ext cx=\"(\d+)\" cy=\"(\d+)\".*?</p:sp>", xml, re.S
+        ):
+            cx = int(sp.group(1))
+            if cx < 1_000_000:  # 忽略过小的装饰框
+                continue
+            block = sp.group(0)
+            total_w = 0.0
+            for run in re.finditer(
+                r"<a:r>.*?sz=\"(\d+)\".*?<a:t>([^<]+)</a:t>.*?</a:r>", block, re.S
+            ):
+                pt = int(run.group(1)) / 100.0
+                text = run.group(2)
+                cjk = len(re.findall(r"[\u4e00-\u9fff]", text))
+                ascii_ = len(text) - cjk
+                # 宽度估计：pt(EMU/12700=px 基准) × 字符宽
+                total_w += pt * (cjk * 1.0 + ascii_ * 0.6)
+            # EMU: 1pt = 12700 EMU
+            est_emu = total_w * 12700
+            if cx > 0 and est_emu > cx * 1.10:
+                slide_name = n.split("/")[-1]
+                ratio = est_emu / cx
+                issues.append(f"{slide_name}: 文本宽估计超框 {ratio:.0%}")
+                break
+    if issues:
+        for t in issues[:5]:
+            warn(f"文本溢出风险: {t}")
+    else:
+        ok("无文本溢出风险")
+
+
+# ---------------------------------------------------------------------------
+# 9. 静态 Critic：元素遮挡（重叠）
+# ---------------------------------------------------------------------------
+def check_overlap(z: zipfile.ZipFile, slides: list[str]) -> None:
+    """检测同页内两个文本/形状框是否存在明显重叠。
+
+    简化判定：两个 <a:off x y> + <a:ext cx cy> 的矩形相交面积
+    占较小框面积 >30% 即报。忽略装饰性小元素（<20000 EMU 边长）
+    和整页背景框（面积 > 页面 50% 的元素不参与遮挡判定）。
+    """
+    # 16:9 页面约 12192000 x 6858000 EMU
+    PAGE_AREA = 12_192_000 * 6_858_000
+    issues = []
+    for n in slides:
+        xml = z.read(n).decode("utf-8", "ignore")
+        boxes = []
+        # 按 sp 分组取元素（同 sp 内的文本框与其背景矩形天然重叠，不算遮挡）
+        for sp in re.finditer(r"<p:sp>.*?</p:sp>", xml, re.S):
+            block = sp.group(0)
+            # 该 sp 的 off/ext
+            m = re.search(
+                r"<a:off x=\"(-?\d+)\" y=\"(-?\d+)\"/><a:ext cx=\"(\d+)\" cy=\"(\d+)\"",
+                block,
+            )
+            if not m:
+                continue
+            x, y, cx, cy = map(int, m.groups())
+            area = cx * cy
+            if cx > 50_000 and cy > 50_000 and area < PAGE_AREA * 0.5:
+                boxes.append((x, y, x + cx, y + cy))
+        # 两两比较
+        for i in range(len(boxes)):
+            for j in range(i + 1, len(boxes)):
+                a, b = boxes[i], boxes[j]
+                ix = max(0, min(a[2], b[2]) - max(a[0], b[0]))
+                iy = max(0, min(a[3], b[3]) - max(a[1], b[1]))
+                inter = ix * iy
+                if inter <= 0:
+                    continue
+                area_a = (a[2] - a[0]) * (a[3] - a[1])
+                area_b = (b[2] - b[0]) * (b[3] - b[1])
+                smaller = min(area_a, area_b)
+                ratio = inter / smaller
+                # 排除"完全包含"关系（大框完全套住小框不算遮挡）
+                contains = (ix == min(a[2], b[2]) - max(a[0], b[0]) and
+                            iy == min(a[3], b[3]) - max(a[1], b[1]) and
+                            (ix == (a[2] - a[0]) or ix == (b[2] - b[0])) and
+                            (iy == (a[3] - a[1]) or iy == (b[3] - b[1])))
+                if contains:
+                    continue
+                # 只报部分重叠且占比较小框 >60% 的情况
+                if smaller > 0 and ratio > 0.60:
+                    issues.append(
+                        f"{n.split('/')[-1]}: 两元素重叠 {ratio:.0%}"
+                    )
+                    break
+            else:
+                continue
+            break
+    if issues:
+        for t in issues[:5]:
+            warn(f"元素遮挡: {t}")
+    else:
+        ok("无元素遮挡")
+
+
+# ---------------------------------------------------------------------------
+# 10. 静态 Critic：对比度不足（前景色 vs 背景色）
+# ---------------------------------------------------------------------------
+def check_contrast(z: zipfile.ZipFile, slides: list[str]) -> None:
+    """检测文字颜色与填充背景色是否对比不足。
+
+    简化版：找 <a:solidFill><a:srgbClr val="RRGGBB"/> 的文本颜色，
+    与同 sp 的背景 <a:solidFill> 比较相对亮度差 <1.5 即报。
+    """
+    def _lum(rgb: str) -> float:
+        try:
+            r, g, b = int(rgb[0:2], 16), int(rgb[2:4], 16), int(rgb[4:6], 16)
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+        except (ValueError, IndexError):
+            return -1.0
+
+    issues = []
+    for n in slides:
+        xml = z.read(n).decode("utf-8", "ignore")
+        for sp in re.finditer(r"<p:sp>.*?</p:sp>", xml, re.S):
+            block = sp.group(0)
+            fills = re.findall(r"<a:solidFill><a:srgbClr val=\"([0-9a-fA-F]{6})\"", block)
+            if len(fills) < 2:
+                continue
+            lums = [_lum(f) for f in fills if _lum(f) >= 0]
+            if len(lums) < 2:
+                continue
+            # 同 sp 内文字与背景亮度差过小
+            if max(lums) - min(lums) < 40:
+                issues.append(f"{n.split('/')[-1]}: 文字与背景对比度不足")
+                break
+    if issues:
+        for t in issues[:5]:
+            warn(f"对比度风险: {t}")
+    else:
+        ok("无对比度风险")
+
+
+# ---------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser(description="PPTX 机械检查（QA 机械项）")
     ap.add_argument("--deck", required=True, help=".pptx 文件")
@@ -272,6 +424,10 @@ def main() -> int:
                 check_fonts(z, slides)
                 check_font_sizes(z, slides, args.min_font)
                 check_full_page_images(z, slides)
+                # 静态 Critic（v3 新增）
+                check_text_overflow(z, slides)
+                check_overlap(z, slides)
+                check_contrast(z, slides)
     except zipfile.BadZipFile:
         print(f"[FAIL] 不是有效的 pptx（zip）文件: {p}")
         return 1

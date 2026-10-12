@@ -15,3 +15,7 @@ skills/duduppt/scripts/fix_readme_links.py
 tests/_tmp_*
 *.tmp
 tmp/
+
+# QA 运行产物
+skills/duduppt/examples/qa-report/
+skills/duduppt/examples/_test_*
