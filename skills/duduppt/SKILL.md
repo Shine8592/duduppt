@@ -620,13 +620,30 @@ GLOBAL_MIN_FONT_PT = 6.5
 | `scripts/submit_listing.py` | 向 Skill 收录站提交收录 PR | 分发推广（可重复运行） |
 | **`scripts/build-master.py`** | **编译带真 sldLayout 的风格模板**（16 种风格） | 需要结构化版式 + 占位符时 |
 | **`scripts/retemplate.py`** | **一键换风格（全篇配色+字体一起变）** | **整份 deck 换风格时（一次改完全篇生效）** |
+| **`scripts/edit-html.py`** | **可编辑 HTML 预览页（点着改 → 导出 → 写回 PPTX）** | **需要可视化改字而不想重做时** |
+| `scripts/export-html.py` | 静态文本预览（只读，副产品） | 仅需快速看文案时 |
 
 > ⚠️ **关于「母版继承」的诚实边界（实测）**：
 > `build-master.py` 交付的是「真 sldLayout + 占位符 + 全篇统一字体配色」，
 > 但**不等价于** PowerPoint 的「改母版一处全篇自动跟随」——
-> 后者依赖 `theme1.xml` 的 `fontScheme`，python-pptx 支持很弱，
-> 实测 `defRPr` 不产生 run 级继承且会让 `qa-check` 报 `CJK_NO_EA`。
+> 后者依赖 `theme1.xml` 的 `fontScheme`，python-pptx 对该层支持很弱，
+> 实测 `defRPr` 不产生 run 级继承。
 > **所以全篇换风格请用 `retemplate.py`**（脚本批量改写，全篇生效，已验证）。
+
+#### 可视化改字的三步闭环（edit-html.py）
+
+```bash
+# 1. 生成可编辑预览页
+python scripts/edit-html.py --deck output.pptx --out preview.html
+
+# 2. 浏览器打开 preview.html → 点着改文字 → 点「导出改动」得到 changes.json
+
+# 3. 写回 PPTX（输出新文件，原稿不动）
+python scripts/edit-html.py --apply changes.json --deck output.pptx --out 新文件.pptx
+```
+
+> 这解决了「改一个字要重做整份」——可视化点改 + 脚本写回，
+> 比命令行 `edit-deck.py`（需知道页码和原文）直观得多。
 
 > `qa-check.py` 已扩展到 **11 项**（新增：文本溢出 / 元素遮挡 / 对比度）。
 > `native-charts.py` `edit-deck.py` `omml-formula.py` 依赖 `python-pptx`

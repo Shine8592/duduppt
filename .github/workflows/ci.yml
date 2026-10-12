@@ -69,6 +69,9 @@ jobs:
       - name: Run master/retemplate self-check
         run: python tests/test_master.py
 
+      - name: Verify README links
+        run: python scripts/check_readme_links.py
+
   markdown:
     name: Markdown lint
     runs-on: ubuntu-latest
