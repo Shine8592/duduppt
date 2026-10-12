@@ -271,6 +271,23 @@ def _set_default_font(tf, font_name: str, size_pt: int, color) -> None:
         el.set("typeface", font_name)
 
 
+def _qa_failures(pptx: Path) -> int:
+    """跑 qa-check.py，返回 FAIL 数量（0 = 合格）。"""
+    qa = SCRIPT_DIR / "qa-check.py"
+    if not qa.exists():
+        return 0
+    try:
+        r = subprocess.run(
+            [sys.executable, str(qa), "--deck", str(pptx), "--format", "json"],
+            capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=120, cwd=str(SCRIPT_DIR.parent),
+        )
+        d = json.loads(r.stdout or "{}")
+        return len(d.get("failures") or [])
+    except Exception:
+        return -1
+
+
 def verify(path: Path) -> dict:
     """验证一个 pptx 是否含真母版与版式。"""
     prs = Presentation(str(path))
@@ -297,6 +314,9 @@ def verify(path: Path) -> dict:
 def main() -> int:
     ap = argparse.ArgumentParser(description="duduppt 母版版式编译器")
     ap.add_argument("--list", action="store_true", help="列出可用风格")
+    ap.add_argument("--all", action="store_true",
+                    help="编译全部风格到 --dir（批量铺开）")
+    ap.add_argument("--dir", help="--all 时的输出目录")
     ap.add_argument("--style", help="风格名或编号（如 01 或 经典深红咨询风）")
     ap.add_argument("--out", help="输出 .pptx 路径")
     ap.add_argument("--font", default="微软雅黑", help="中文字体")
@@ -309,13 +329,45 @@ def main() -> int:
         return 0
 
     styles = parse_palettes()
-    if args.list or not args.style:
+    if args.list or (not args.style and not args.all):
         print(f"可用风格（{len(styles)} 种）:")
         for k in styles:
             print(f"  - {k}")
-        if not args.style:
-            print("\n用 --style <名称或编号> 指定一个风格来编译")
+        if not args.style and not args.all:
+            print("\n用 --style <名称或编号> 编译单个，或用 --all 批量编译全部")
         return 0
+
+    # 批量编译全部风格
+    if args.all:
+        out_dir = Path(args.dir) if args.dir else (
+            SCRIPT_DIR.parent / "examples" / "templates"
+        )
+        out_dir.mkdir(parents=True, exist_ok=True)
+        ok_n = fail_n = 0
+        results = []
+        for k, cfg in styles.items():
+            num = k.split("·")[0] or "style"
+            # 文件名：master-<编号>.pptx，编号不足补零
+            safe = num.zfill(2)
+            p = out_dir / f"master-{safe}.pptx"
+            try:
+                r = build_master(cfg, p, cjk_font=args.font)
+                qa = _qa_failures(p)
+                if qa == 0:
+                    ok_n += 1
+                    results.append((k, p.name, "OK", 0))
+                else:
+                    fail_n += 1
+                    results.append((k, p.name, "QA_FAIL", qa))
+            except Exception as e:
+                fail_n += 1
+                results.append((k, "-", "ERROR", str(e)[:60]))
+        print(f"批量编译完成：成功 {ok_n} / 失败 {fail_n}（输出目录 {out_dir}）")
+        print()
+        for k, fn, status, extra in results:
+            flag = "✅" if status == "OK" else "❌"
+            print(f"  {flag} {k:<28} -> {fn}   {status}{(' (' + str(extra) + ')') if extra else ''}")
+        return 0 if fail_n == 0 else 1
 
     # 匹配风格（支持编号或名称模糊匹配）
     key = None

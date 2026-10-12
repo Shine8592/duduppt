@@ -8,20 +8,23 @@ duduppt MCP 服务：把 QA 三件套 + 编辑 + 图表 + 画幅 暴露成 MCP �
   别的 Skill / Agent 也能通过 MCP 调用 duduppt 的 QA 能力，
   而不必复制脚本。这是差异化定位的长期价值所在。
 
-暴露的工具（8 个）：
-    ppt_capabilities    查看本服务支持哪些动作
-    ppt_qa_check        机械检查（11 项 lint）
-    ppt_qa_report       生成质量审计报告
-    ppt_trace_claims    断言溯源（数字 ↔ 证据）
-    ppt_qa_compare      盲读一致性对比
-    ppt_snapshot_save   归档版本快照
-    ppt_snapshot_list   列出历史版本
-    ppt_canvas_formats  查询支持的画幅
+暴露的工具（12 个）：
+    ppt_capabilities     查看本服务支持哪些动作
+    ppt_qa_check         机械检查（11 项 lint）
+    ppt_qa_report        生成质量审计报告
+    ppt_trace_claims     断言溯源（数字 ↔ 证据）
+    ppt_qa_compare       盲读一致性对比
+    ppt_snapshot_save    归档版本快照
+    ppt_snapshot_list    列出历史版本
+    ppt_canvas_formats   查询支持的画幅
+    ppt_native_chart     生成原生图表（v3.2 新增）
+    ppt_edit_text        编辑既有 PPTX 的文字（v3.2 新增）
+    ppt_list_text        列出某页文本（v3.2 新增）
+    ppt_retemplate       全篇换风格（v3.2 新增）
 
-未做成 MCP 工具的操作（需要人参与或依赖 python-pptx 环境）：
-    native-charts / edit-deck / omml-formula —— 仍以脚本方式调用，
-    因为它们通常需要人工确认改动位置（页码、原文），且 python-pptx
-    在 MCP 环境下未必安装。
+全部操作已工具化（v3.2 完成）：此前保留为脚本的
+native-charts / edit-deck / omml-formula 现已可通过 MCP 调用，
+仅 omml-formula 因需精确页码与公式参数仍建议脚本方式。
 
 启动：
     python scripts/mcp_server.py
@@ -96,6 +99,7 @@ def ppt_capabilities() -> dict:
         "server": "duduppt-mcp",
         "version": SERVER_VERSION,
         "mcp_tools": [
+            {"name": "ppt_capabilities", "purpose": "查看支持的动作"},
             {"name": "ppt_qa_check", "purpose": "机械检查（11 项 lint）"},
             {"name": "ppt_qa_report", "purpose": "生成质量审计报告"},
             {"name": "ppt_trace_claims", "purpose": "断言溯源（数字 ↔ 证据）"},
@@ -103,17 +107,19 @@ def ppt_capabilities() -> dict:
             {"name": "ppt_snapshot_save", "purpose": "归档版本快照"},
             {"name": "ppt_snapshot_list", "purpose": "列出历史版本"},
             {"name": "ppt_canvas_formats", "purpose": "查询支持的画幅"},
+            {"name": "ppt_native_chart", "purpose": "生成原生图表（带编辑数据）"},
+            {"name": "ppt_list_text", "purpose": "列出某页文本"},
+            {"name": "ppt_edit_text", "purpose": "替换某页文字（改字不重建）"},
+            {"name": "ppt_retemplate", "purpose": "全篇换风格"},
+            {"name": "ppt_build_master", "purpose": "编译风格模板（真 sldLayout）"},
         ],
         "script_only": [
-            {"name": "native-charts.py", "purpose": "生成原生图表（带编辑数据）"},
-            {"name": "edit-deck.py", "purpose": "编辑既有 PPTX（改字不重建）"},
             {"name": "omml-formula.py", "purpose": "写入 OMML 原生公式"},
             {"name": "generate-sample.js", "purpose": "示例 PPTX 生成（Node/pptxgenjs）"},
         ],
         "why_script_only": (
-            "这些操作通常需要人工确认改动位置（页码、原文、图表序号），"
-            "且依赖 python-pptx，在 MCP 环境下未必安装；"
-            "做成脚本便于人工逐步确认，比自动化更稳妥。"
+            "omml-formula 需要精确的页码与公式参数（分数/根号/上下标），"
+            "脚本形式便于逐步确认；generate-sample.js 依赖 Node 环境。"
         ),
     }
 
@@ -227,6 +233,112 @@ def ppt_canvas_formats(name: str = "") -> dict:
     if name:
         args = ["--show", name]
     return _run("canvas-formats.py", *args)
+
+
+@mcp.tool()
+def ppt_native_chart(deck: str, chart_type: str, categories: str,
+                     series: list[str], out: str = "",
+                     title: str = "", slide: int = 0) -> dict:
+    """生成 PowerPoint 原生图表（带「编辑数据」按钮的真 Chart 对象）。
+
+    参数：
+    - deck：PPTX 路径（提供则在指定页叠加；留空则新建）
+    - chart_type：bar / bar_h / line / pie / stacked / area
+    - categories：类别，逗号分隔，如 "Q1,Q2,Q3,Q4"
+    - series：系列列表，每项格式 "名称:v1,v2,..."，可多个
+    - out：输出文件路径
+    - title：图表标题
+    - slide：叠加到 deck 的第几页（1 起；0 或省略则新建 deck）
+
+    依赖 python-pptx。
+    """
+    args = ["--type", chart_type, "--categories", categories]
+    for s in series:
+        args += ["--series", s]
+    if deck:
+        args += ["--deck", deck]
+        if slide and slide > 0:
+            args += ["--slide", str(slide)]
+    if out:
+        args += ["--out", out]
+    if title:
+        args += ["--title", title]
+    return _run("native-charts.py", *args)
+
+
+@mcp.tool()
+def ppt_list_text(deck: str, slide: int) -> dict:
+    """列出指定页的所有文本（用于定位要改什么）。
+
+    参数：
+    - deck：PPTX 路径
+    - slide：页码（1 起）
+    """
+    return _run("edit-deck.py", "--deck", deck,
+                "list-text", "--slide", str(slide))
+
+
+@mcp.tool()
+def ppt_edit_text(deck: str, slide: int, find: str, replace: str,
+                  out: str = "") -> dict:
+    """替换指定页的文字（改字不重建，保留原设计与未改动页）。
+
+    参数：
+    - deck：PPTX 路径
+    - slide：页码（1 起）
+    - find：要找的原文
+    - replace：替换为
+    - out：输出文件（留空则 <原名>-edited.pptx，不覆盖原稿）
+    """
+    args = ["--deck", deck]
+    if out:
+        args += ["--out", out]
+    args += ["set-text", "--slide", str(slide),
+             "--find", find, "--replace", replace]
+    return _run("edit-deck.py", *args)
+
+
+@mcp.tool()
+def ppt_retemplate(deck: str, style: str, out: str = "") -> dict:
+    """把整份 deck 换成另一种风格（全篇配色 + 字体一起变）。
+
+    参数：
+    - deck：PPTX 路径
+    - style：目标风格编号或名称（如 "05" 或 "浅灰白"）
+    - out：输出文件（留空则 <原名>-<编号>.pptx）
+    """
+    args = ["--deck", deck, "--style", style]
+    if out:
+        args += ["--out", out]
+    return _run("retemplate.py", *args)
+
+
+@mcp.tool()
+def ppt_build_master(style: str = "", out: str = "",
+                     all_styles: bool = False, out_dir: str = "") -> dict:
+    """编译风格模板（带真 sldLayout + 占位符）。
+
+    参数：
+    - style：单个风格编号/名称（与 all_styles 二选一）
+    - out：单风格时的输出文件路径
+    - all_styles：True 则批量编译全部 16 种风格
+    - out_dir：批量时的输出目录
+
+    注意：这不等价于 PowerPoint 的「改母版全篇自动跟随」，
+          全篇换风格请用 ppt_retemplate。
+    """
+    args = []
+    if all_styles:
+        args += ["--all"]
+        if out_dir:
+            args += ["--dir", out_dir]
+    else:
+        if not style:
+            return {"ok": False, "error": "需要 style 或 all_styles=True"}
+        args += ["--style", style]
+        if out:
+            args += ["--out", out]
+    return _run("build-master.py", *args)
 
 
 def main() -> None:
