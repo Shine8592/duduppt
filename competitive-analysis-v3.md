@@ -129,22 +129,31 @@ duduppt 最直接的对手（同为 Skill 形态、本地生成路线）。细�
 
 ---
 
-## 六、执行节奏
+## 六、执行进度
 
 ```
-第一步（1-2 周）：分发先行
-  ├─ 兼容 npx skills add（目录结构 + 元数据）
+✅ 第一步（1-2 周）：分发先行
+  ├─ 兼容 npx skills add + Claude Code 插件市场（v3.0 已完成）
   ├─ 提交 datawhalechina/ai-skills-for-everyone 收录
-  └─ 提交 ningzimu/awesome-ai-ppt 清单
+  │    PR #3：https://github.com/datawhalechina/ai-skills-for-everyone/pull/3
+  │    状态：open（2026-10-12 提交，卡片 +161 行）
+  └─ 可选：提交 ningzimu/awesome-ai-ppt 清单
 
-第二步（2-4 周）：放大护城河
-  ├─ QA 审计报告外化
-  ├─ 静态 Critic 检测
-  └─ 版本快照
+✅ 第二步（2-4 周）：放大护城河
+  ├─ QA 审计报告外化（qa-report.py）
+  ├─ 静态 Critic 检测（qa-check.py 扩到 11 项）
+  └─ 版本快照（snapshot.py）
 
-第三步（长期）：啃硬骨头
-  ├─ 原生图表/母版（SVG→OOXML 管线评估）
-  └─ 编辑既有 PPTX（字节级保留设计）
+✅ 第三步（长期）：啃硬骨头
+  ├─ 原生图表 / 母版（native-charts.py）
+  └─ 编辑既有 PPTX（edit-deck.py）
+
+✅ 附加完成
+  ├─ 多画幅（canvas-formats.py，9 种）
+  ├─ OMML 公式（omml-formula.py）
+  └─ MCP server（mcp_server.py，8 工具）
+
+状态：8 项升级全部完成，CI #24 全绿 8/8，零回归。
 ```
 
 **战略**：不对标 ppt-master 的 60k★（全职+赞助投入）。差异化定位：

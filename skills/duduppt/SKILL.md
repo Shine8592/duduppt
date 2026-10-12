@@ -617,6 +617,7 @@ GLOBAL_MIN_FONT_PT = 6.5
 | `scripts/canvas-formats.py` | 画幅定义与换算（9 种，含小红书/公众号） | 出多尺寸投放版本时 |
 | `scripts/omml-formula.py` | 写入 OMML 原生公式（可双击编辑） | 学术/技术/金融建模含公式时 |
 | `scripts/mcp_server.py` | MCP 服务（8 个工具，QA 能力平台化） | 让别的 Agent 复用 duduppt QA 时 |
+| `scripts/submit_listing.py` | 向 Skill 收录站提交收录 PR | 分发推广（可重复运行） |
 
 > `qa-check.py` 已扩展到 **11 项**（新增：文本溢出 / 元素遮挡 / 对比度）。
 > `native-charts.py` `edit-deck.py` `omml-formula.py` 依赖 `python-pptx`
