@@ -1,0 +1,13 @@
+include LICENSE
+include README.md
+include README_EN.md
+include CHANGELOG.md
+include competitive-analysis-v3.md
+recursive-include skills/duduppt *
+recursive-include duduppt *
+global-exclude *.pyc
+global-exclude __pycache__
+prune scripts/__pycache__
+prune skills/duduppt/scripts/__pycache__
+prune .git
+prune node_modules

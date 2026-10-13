@@ -16,6 +16,15 @@ tests/_tmp_*
 *.tmp
 tmp/
 
-# QA ���в���
+# QA 运行产物
 skills/duduppt/examples/qa-report/
 skills/duduppt/examples/_test_*
+
+# ── PyPI 构建产物（由 scripts/build_pypi.py 生成，绝不入库）──
+# duduppt/skill/ 是 skills/duduppt/ 的同步副本，
+# 构建时自动生成；入库会造成两份重复内容。
+duduppt/skill/
+dist/
+build/
+*.egg-info/
+.eggs/
