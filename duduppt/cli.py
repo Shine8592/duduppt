@@ -51,7 +51,11 @@ def detect_agents() -> list[str]:
 def install(agent: str | None, dest: str | None, force: bool) -> int:
     """安装 Skill 到目标目录。"""
     src = skill_path()
-    skill_name = src.name  # duduppt
+    # ⚠️ 修复：skill_name 不能取 src.name（包内目录名固定是 "skill"，
+    # 会导致安装到 xxx/skill/ 而不是 xxx/duduppt/，实测踩过）。
+    # 正确来源：包名。pip 安装的包一定叫 duduppt。
+    import duduppt as _pkg
+    skill_name = _pkg.__name__  # "duduppt"
 
     if dest:
         target = Path(dest).expanduser() / skill_name
