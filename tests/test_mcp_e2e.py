@@ -122,13 +122,14 @@ def main() -> int:
     tools = ((by_id.get(2, {}).get("result") or {}).get("tools")) or []
     names = sorted(t["name"] for t in tools)
     expected = sorted([
-        "ppt_build_master", "ppt_canvas_formats", "ppt_capabilities",
-        "ppt_edit_text", "ppt_list_text", "ppt_native_chart",
-        "ppt_qa_check", "ppt_qa_compare", "ppt_qa_report",
-        "ppt_retemplate", "ppt_snapshot_list", "ppt_snapshot_save",
-        "ppt_trace_claims",
+        "ppt_apply_changes", "ppt_build_master", "ppt_canvas_formats",
+        "ppt_capabilities", "ppt_edit_text", "ppt_editable_preview",
+        "ppt_generate_sample", "ppt_list_text", "ppt_native_chart",
+        "ppt_omml_formula", "ppt_qa_check", "ppt_qa_compare", "ppt_qa_report",
+        "ppt_retemplate", "ppt_snapshot_diff", "ppt_snapshot_list",
+        "ppt_snapshot_restore", "ppt_snapshot_save", "ppt_trace_claims",
     ])
-    check("13 个工具全部注册", names == expected, f"got={names}")
+    check("19 个工具全部注册", names == expected, f"got={names}")
     check("无内部函数泄漏", not any(n.startswith("_") for n in names))
     no_desc = [t["name"] for t in tools if not (t.get("description") or "").strip()]
     check("所有工具有描述", not no_desc, f"缺={no_desc}")
