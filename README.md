@@ -4,10 +4,12 @@
   <p>Hermes Agent 技能 · 四阶段方法论 · 原生可编辑 PPTX 输出</p>
   <p>
     <a href="https://github.com/Shine8592/duduppt/actions/workflows/ci.yml"><img src="https://github.com/Shine8592/duduppt/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="https://pypi.org/project/duduppt/"><img src="https://img.shields.io/pypi/v/duduppt.svg" alt="PyPI version"></a>
+    <a href="https://pypi.org/project/duduppt/"><img src="https://img.shields.io/pypi/pyversions/duduppt.svg" alt="Python versions"></a>
     <a href="https://github.com/Shine8592/duduppt/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
     <a href="https://github.com/Shine8592/duduppt"><img src="https://img.shields.io/github/stars/Shine8592/duduppt?style=flat" alt="Stars"></a>
-     <a href="https://github.com/Shine8592/duduppt"><img src="https://img.shields.io/badge/version-2.0.0-green.svg" alt="Version"></a>
-   </p>
+    <a href="https://github.com/Shine8592/duduppt"><img src="https://img.shields.io/badge/version-3.2.0-green.svg" alt="Version"></a>
+    </p>
    <p>
      <a href="README_EN.md"><strong>English README</strong></a>
    </p>
@@ -116,6 +118,26 @@ npx skills add Shine8592/duduppt
 git clone https://github.com/Shine8592/duduppt.git
 cp -r duduppt/skills/duduppt ~/.hermes/skills/creative/
 ```
+
+**方式三：PyPI 安装（新增）**
+
+```bash
+pip install duduppt
+
+# 安装 Skill 到已探测到的 Agent（claude / codex / cursor / opencode / hermes）
+duduppt install
+
+# 或指定 agent / 目录
+duduppt install --agent claude
+duduppt install --dest ~/.claude/skills
+duduppt install --force          # 已存在时覆盖
+```
+
+> 💡 duduppt 的核心是 **Agent Skill**（Markdown + 脚本），PyPI 包的作用是把它作为
+> **可分发的单元**并附带一个安装器。依赖为零 —— Skill 本体装完即用；
+> Python 脚本所需依赖按需安装：`pip install "duduppt[edit]"`（编辑类脚本需 python-pptx）
+> `pip install "duduppt[py]"`（含 Pillow）
+> `pip install "duduppt[full]"`（含 MCP server）
 
 ### 使用
 

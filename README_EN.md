@@ -39,6 +39,22 @@ npx skills add Shine8592/duduppt
 /plugin install duduppt@duduppt
 ```
 
+**Or via PyPI:**
+
+```bash
+pip install duduppt
+
+# Install the skill into detected agents (claude / codex / cursor / opencode / hermes)
+duduppt install
+duduppt install --agent claude
+duduppt install --dest ~/.claude/skills
+```
+
+> 💡 duduppt's core is an **Agent Skill** (Markdown + scripts). The PyPI package ships it as a
+> **distributable unit** with an installer. Zero required dependencies — the skill works right after
+> install; Python scripts pull their deps on demand: `pip install "duduppt[edit]"` (python-pptx),
+> `pip install "duduppt[py]"` (adds Pillow), `pip install "duduppt[full]"` (adds MCP server).
+
 Then install dependencies:
 
 ```bash
